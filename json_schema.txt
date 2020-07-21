@@ -1,0 +1,132 @@
+#JSON schema for colav documents database
+#Version 0.0.1
+#Modified in 02-06-2020
+
+#document collection
+
+{
+    "_id":<internal id>,
+    "updated":<int>,
+    "source_checked":[{
+        "source":<str>,
+        "ts":<int>
+    }]
+    "publication_type":<str>,
+    "title":<str>,
+    "subtitle":<str>,
+    "abstract":<str>,
+    "keywords":<list of str>,
+    "start_page":<int>,
+    "end_page":<int>,
+    "volume":<int>,
+    "issue":<int>,
+    "date_published":<int>,
+    "year_published":<int>,
+    "languages":<list of str>,
+    "bibtex":<str>,
+    "funding_organization":<str>,
+    "funding_details":<list of str>,
+    "access_type":<str>
+    "external_ids":[
+        {
+            "source":<str>,
+            "id":<str>
+        }
+    ],
+    "urls":[
+        {
+            "source":<str>,
+            "url":<str>
+        }
+    ],
+    "source":<internal id>-
+    "author_count":<int>,
+    "authors":[
+        {
+            "id":<internal id>,
+            "corresponding":<bool>,
+            "affiliations":[
+                {
+                    "id":<internal id>,
+                    "branch":[
+                        {
+                            "type": <str>,
+                            "name": <str>
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "references_count":<int>, 
+    "references":{ 
+        "colav":<list of internal ids>,
+        "lens":<list of lens ids>,
+        "scholar":<list of scholar ids> 
+    },
+    "citations_count":<int>, 
+    "citations":{
+        "colav":<list of internal ids>,
+        "lens":<list of lens id>,
+        "scholar":<list of scholar ids>
+    }
+}
+
+#author collection
+{
+    "_id":<internal id>,
+    "national_id":<str>
+    "full_name":<str>,
+    "first_names": <str>,
+    "last_names":<str>,
+    "initials":<str>,
+    "aliases":<List of str>
+    "external_ids":[
+        {
+            "source":<str>,
+            "value":<str>
+        }
+    ]
+}
+
+#institution collection
+#Priority is grid
+{
+    "_id":<internal id>,
+    "name":<str>,
+    "grid_id":<str>,
+    "country":<str>,
+    "city":<str>,   
+    "aliases":<List of str>
+}
+
+
+#source collection
+
+{
+    "_id":<internal id>,
+    "title":<str>,
+    "type":<str>,
+    "publisher":<str>,
+    "serial":[
+        {
+            "type":<str>,
+            "value":<str>
+        }
+    ],
+    "abbreviations":[
+        {
+            "type":<str>,
+            "value"
+            poi098oiu987
+             :<str>
+        }
+    ]
+    "country":<str>,
+    "asjc_info":[
+        {
+            "code":<int>,
+            "subject":<str>
+        }
+    ]
+}

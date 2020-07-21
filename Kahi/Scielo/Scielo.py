@@ -1,0 +1,387 @@
+from time import time
+from datetime import datetime as dt
+import iso3166
+import iso639
+import json
+import Levenshtein
+
+# TODO:
+# * Check how the email, orcidid and researcherid in the author information
+#   could be matched to the corresponding author in the list
+# * What to do with the inconsistent lastnames?
+# * How to find an institution with the given data?
+
+class Scielo():
+    def __init__(self,legendfile=""):
+        """
+        """
+        if legendfile:
+            with open(legendfile) as f:
+                self._legend=json.load(f)
+
+    def parse_document(self, register):
+        """
+        Transforms the raw register document information from web of science in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in web of science format
+        
+        Returns
+        -------
+        document : dict
+            Information of the document in the CoLav standard format
+        """
+        data={}
+        data["updated"]=int(time())
+        #Depending on the type of publication
+        #this should fill fields with different information
+        #For example if it is an article a book or a conference
+        #check the legend because PT and DT are confusing
+        if "DT" in register.keys():
+            if register["DT"] and register["DT"]==register["DT"]:
+                data["publication_type"]=register["DT"].rstrip().lower()
+            else:
+                data["publication_type"]=""
+        else:
+            data["publication_type"]=""
+        if "PT" in register.keys():
+            if register["PT"].rstrip()=="J":
+                if "AU" in register.keys():
+                    data["author_count"]=len(register["AU"][:-1].split("\n"))
+                else:
+                    data["author_count"]=""
+            elif register["PT"].rstrip()=="B":
+                data["publication_type"]="book"
+                if "BA" in register.keys():
+                    data["author_count"]=len(register["BA"][:-1].split("\n"))
+                else:
+                    data["author_count"]=""
+            elif register["PT"].rstrip()=="S":
+                data["publication_type"]="series"
+            elif register["PT"].rstrip()=="P":
+                data["publication_type"]="patent"
+            else:
+                data["publication_type"]=""
+        else:
+            data["publication_type"]=""
+        
+            
+        if "TI" in register.keys():
+            if register["TI"] and register["TI"]==register["TI"]:
+                data["title"]=register["TI"].rstrip()
+            else:
+                data["title"]=""
+        if "AB" in register.keys():
+            if register["AB"] and register["AB"]==register["AB"]:
+                data["abstract"]=register["AB"].rstrip()
+            else:
+                data["abstract"]=""
+        else:
+            data["abstract"]=""
+        if "BP" in register.keys():
+            if register["BP"] and register["BP"]==register["BP"]:
+                try:
+                    data["start_page"]=int(register["BP"].rstrip())
+                except:
+                    data["start_page"]=""
+            else:
+                data["start_page"]=""
+        else:
+            data["start_page"]=""
+        if "EP" in register.keys():
+            if register["EP"] and register["EP"]==register["EP"]:
+                try:
+                    data["end_page"]=int(register["EP"].rstrip())
+                except:
+                    data["end_page"]=""
+            else:
+                data["end_page"]=""
+        else:
+            data["end_page"]=""
+        if "VL" in register.keys():
+            if register["VL"] and register["VL"]==register["VL"]:
+                data["volume"]=int(register["VL"].rstrip())
+            else:
+                data["volume"]=""
+        else:
+            data["volume"]=""
+        if "IS" in register.keys():
+            if register["IS"] and register["IS"]==register["IS"]:
+                data["issue"]=int(register["IS"].rstrip())
+            else:
+                data["issue"]=""
+        else:
+            data["issue"]=""
+        if "PY" in register.keys():
+            if register["PY"] and register["PY"]==register["PY"]:
+                data["year_published"]=int(register["PY"].rstrip())
+            else:
+                data["year_published"]=""
+        else:
+            data["year_published"]=""
+        if "LA" in register.keys():
+            if register["LA"] and register["LA"]==register["LA"]:
+                data["languages"]=[iso639.languages.inverted.get(register["LA"].rstrip()).part1]
+            else:
+                data["languages"]=""
+        else:
+            data["languages"]=""
+        
+        #external_ids
+        data["external_ids"]=[]
+        if "DI" in register.keys():
+            if register["DI"]:
+                ext={"source":"doi","id":register["DI"]}
+                data["external_ids"].append(ext)
+        if "D2" in register.keys():
+            if register["D2"]:
+                ext={"source":"book_doi","id":register["D2"]}
+                data["external_ids"].append(ext)
+        if "UT" in register.keys():
+            if register["UT"]:
+                ext={"source":"scielo","id":register["UT"].rstrip().split(":")[1]}
+                data["external_ids"].append(ext)
+
+            
+        data["urls"]=[]
+
+        #REFERENCES SECTION
+        if "NR" in register.keys():
+            if register["NR"] and register["NR"]==register["NR"]:
+                try:
+                    data["references_count"]=int(register["NR"].rstrip())
+                except:
+                    data["references_count"]=""
+            else:
+                data["references_count"]=""
+        else:
+            data["references_count"]=""
+
+        #CITATIONS SECTION
+        if "Z9" in register.keys():
+            if register["Z9"] and register["Z9"]==register["Z9"]:
+                try:
+                   data["citations_count"]=int(register["Z9"].rstrip())
+                except:
+                    data["citations_count"]=""
+            else:
+                data["citations_count"]=""
+        else:
+            data["citations_count"]=""
+
+        return data
+    
+    def parse_authors(self,register):
+        """
+        Transforms the raw register author information from web of science in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in web of science format
+        
+        Returns
+        -------
+        authors : list
+            Information of the authors in the CoLav standard format
+        """
+        authors=[]
+        corresponding_last_name=""
+        oircid_list=[]
+        researchid_list=[]
+        if "RI" in register.keys():
+            if register["RI"] and register["RI"]==register["RI"]:
+                researchid_list=register["RI"].rstrip().split("; ")
+        if "OI" in register.keys():
+            if register["OI"] and register["OI"]==register["OI"]:
+                oircid_list=register["OI"].rstrip().split("; ")
+        if "AF" in register.keys():
+            author_list=register["AF"].rstrip().split("\n")
+        elif "AU" in register.keys():
+            author_list=register["AU"].rstrip().lower().split("\n")
+        if "RP" in register.keys():
+            if register["RP"]:
+                corresponding_last_name=register["RP"].split(",")[0]
+        for au in author_list:
+            raw_name=au.split(", ")
+            names=raw_name[1].capitalize()
+            last_names=raw_name[0].capitalize()
+            initials="".join([i[0].upper() for i in names.split(" ")])
+            entry={
+                'full_name':names+" "+last_names,
+                'first_names':names,
+                'last_names':last_names,
+                'initials':initials
+            }
+            #Checking if there is an external id
+            entry_ext=[]
+            for res in researchid_list:
+                name,rid=res.split("/")
+                if Levenshtein.ratio(name,last_names+", "+names)>0.8:
+                    entry_ext.append({"source":"researchid","value":rid})
+                    break
+            for res in oircid_list:
+                name,oid=res.split("/")
+                if Levenshtein.ratio(name,last_names+", "+names)>0.8:
+                    entry_ext.append({"source":"orcid","value":oid})
+                    break
+            entry["external_ids"]=entry_ext
+            #Checking if is corresponding author
+            if corresponding_last_name:
+                if corresponding_last_name in last_names:
+                    entry["correspondig"]=True
+                    if "EM" in register.keys():
+                        if register["EM"] and register["EM"]==register["EM"]:
+                            entry["corresponding_email"]=register["EM"].rstrip()
+                        else:
+                            entry["corresponding_email"]=""
+                    else:
+                        entry["corresponding_email"]=""
+                else:
+                    entry["correspondig"]=False
+                    entry["corresponding_email"]=""
+            authors.append(entry)
+        return authors
+
+    def parse_institutions(self,register):
+        """
+        Transforms the raw register institution informatio from web of science in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in web of science format
+        
+        Returns
+        -------
+        institutions : list
+            Information of the institutions in the CoLav standard format
+        """
+        inst=[]
+        #if "" in register.keys(): inst[""]=register[""]
+        if "C1" in register.keys():
+           #print(register["C1"].rstrip().split("\n"))
+            for auwaf in register["C1"].rstrip().split("\n"):
+                aulen=len(auwaf.split(";"))
+                aff=auwaf.split("] ")[1]
+                name=",".join(aff.split(",")[:-1])
+                country=iso3166.countries_by_name.get(aff.split(", ")[-1].replace(".","").upper()).alpha2
+                for i in range(aulen):
+                    inst.append({"name":name,"country":country}) ##LAST PART OF aff HAS THE COUNTRY
+        return inst
+
+    def parse_source(self,register):
+        """
+        Transforms the raw register source information from web of science in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in web of science format
+        
+        Returns
+        -------
+        source : dict
+           Information of the source in the CoLav standard format
+        """
+        source={}
+        if "SO" in register.keys():
+            if register["SO"]:
+                source["title"]=register["SO"].rstrip()
+        if "PT" in register.keys():
+            if register["PT"]:
+                if register["PT"].rstrip()=="J": source["type"]="journal"
+                if register["PT"].rstrip()=="B": source["type"]="book"
+                if register["PT"].rstrip()=="S": source["type"]="series"
+                if register["PT"].rstrip()=="P": source["type"]="patent"
+        if "PU" in register.keys():
+            if register["PU"]:
+                source["publisher"]=register["PU"].rstrip()
+        source["serials"]=[]
+        if "SN" in register.keys():
+            if register["SN"]:
+                entry={"type":"pissn","value":register["SN"].rstrip().replace("-","")}
+                source["serials"].append(entry)
+        if "EI" in register.keys():
+            if register["EI"]:
+                entry={"type":"eissn","value":register["EI"].rstrip().replace("-","")}
+                source["serials"].append(entry)
+        if "BN" in register.keys():
+            if register["BN"]:
+                entry={"type":"isbn","value":register["BN"].rstrip().replace("-","")}
+                source["serials"].append(entry)
+        source["abbreviations"]=[]
+        if "J9" in register.keys():
+            if register["J9"]:
+                entry={"type":"char","value":register["J9"].rstrip()}
+                source["abbreviations"].append(entry)
+        if "JI" in register.keys():
+            if register["JI"]:
+                entry={"type":"iso","value":register["JI"].rstrip()}
+                source["abbreviations"].append(entry)
+        #if "" in register.keys(): source[""]=register[""]
+        #if "" in register.keys(): source[""]=register[""]
+        #if "" in register.keys(): source[""]=register[""]
+        
+        return source
+        
+    def parse_one(self,register):
+        """
+        Transforms the raw register from Web Of Science in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in Web Of Science format
+        
+        Returns
+        -------
+        document : dict
+            Information of the document in the CoLav standard format
+        authors : list
+            Information of the authors in the CoLav standard format
+        institutions : list
+            Information of the institutions in the CoLav standard format
+        source : dict
+           Information of the source in the CoLav standard format
+        """
+
+        return (self.parse_document(register),
+                self.parse_authors(register),
+                self.parse_institutions(register),
+                self.parse_source(register))
+
+                        
+        
+
+    def parse_many(self,registers):
+        """
+        Transforms a list raw register from Web Of Science in the CoLav standard.
+
+        Parameters
+        ----------
+        registers : list
+           Register in Web Of Science format
+        
+        Returns????????????????????????????????
+        -------
+        document : dict
+            Information of the document in the CoLav standard format
+        authors : list
+            Information of the authors in the CoLav standard format
+        institutions : list
+            Information of the institutions in the CoLav standard format
+        source : dict
+           Information of the source in the CoLav standard format
+        """
+        data=[]
+        for reg in registers:
+            try:
+                data.append(self.parse_one(reg))
+            except Exception as e:
+                print("Could not parse register")
+                print(reg)
+                print(e)
+        return data

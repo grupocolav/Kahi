@@ -1,0 +1,5 @@
+pymongo==3.10.1
+iso3166==1.0.1
+iso639==0.4.5
+langdetect==1.14.0
+currencyconverter==0.14.2
