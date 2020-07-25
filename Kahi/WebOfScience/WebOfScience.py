@@ -49,23 +49,39 @@ class WebOfScience():
         if "PT" in register.keys():
             if register["PT"].rstrip()=="J":
                 if "AU" in register.keys():
-                    data["author_count"]=len(register["AU"][:-1].split("\n"))
+                    data["author_count"]=len(register["AU"].rstrip().split("\n"))
                 else:
                     data["author_count"]=""
             elif register["PT"].rstrip()=="B":
                 data["publication_type"]="book"
                 if "BA" in register.keys():
-                    data["author_count"]=len(register["BA"][:-1].split("\n"))
+                    data["author_count"]=len(register["BA"].rstrip().split("\n"))
                 else:
                     data["author_count"]=""
             elif register["PT"].rstrip()=="S":
                 data["publication_type"]="series"
+                if "AU" in register.keys():
+                    data["author_count"]=len(register["AU"].rstrip().split("\n"))
+                else:
+                    data["author_count"]=""
             elif register["PT"].rstrip()=="P":
                 data["publication_type"]="patent"
+                if "AU" in register.keys():
+                    data["author_count"]=len(register["AU"].rstrip().split("\n"))
+                else:
+                    data["author_count"]=""
             else:
                 data["publication_type"]=""
+                if "AU" in register.keys():
+                    data["author_count"]=len(register["AU"].rstrip().split("\n"))
+                else:
+                    data["author_count"]=""
         else:
             data["publication_type"]=""
+            if "AU" in register.keys():
+                data["author_count"]=len(register["AU"].rstrip().split("\n"))
+            else:
+                data["author_count"]=""
             
         if "TI" in register.keys():
             if register["TI"] and register["TI"]==register["TI"]:
@@ -101,14 +117,20 @@ class WebOfScience():
             data["end_page"]=""
         if "VL" in register.keys():
             if register["VL"] and register["VL"]==register["VL"]:
-                data["volume"]=int(register["VL"].rstrip())
+                try:
+                    data["volume"]=int(register["VL"].rstrip())
+                except:
+                    data["volume"]=""
             else:
                 data["volume"]=""
         else:
             data["volume"]=""
         if "IS" in register.keys():
             if register["IS"] and register["IS"]==register["IS"]:
-                data["issue"]=int(register["IS"].rstrip())
+                try:
+                    data["issue"]=int(register["IS"].rstrip())
+                except:
+                    data["issue"]=""
             else:
                 data["issue"]=""
         else:
@@ -122,7 +144,19 @@ class WebOfScience():
             data["year_published"]=""
         if "LA" in register.keys():
             if register["LA"] and register["LA"]==register["LA"]:
-                data["languages"]=[iso639.languages.inverted.get(register["LA"].rstrip()).part1]
+                langs=register["LA"].rstrip().split("\n")
+                if len(langs)==1:
+                    if register["LA"].rstrip()=="Unspecified":
+                        data["languages"]=""
+                    else:
+                        data["languages"]=[iso639.languages.inverted.get(register["LA"].rstrip()).part1]
+                else:
+                    data["languages"]=[]
+                    for lang in langs:
+                        if lang=="Unspecified":
+                            data["languages"].append("")
+                        else:
+                            data["languages"].append(iso639.languages.inverted.get(lang).part1)
             else:
                 data["languages"]=""
         else:
@@ -189,14 +223,14 @@ class WebOfScience():
         if "PT" in register.keys():
             #if register["PT"].rstrip()=="J":
             corresponding_last_name=""
-            oircid_list=[]
+            orcid_list=[]
             researchid_list=[]
             if "RI" in register.keys():
                 if register["RI"] and register["RI"]==register["RI"]:
-                    researchid_list=register["RI"].rstrip().split("; ")
+                    researchid_list=register["RI"].rstrip().replace("; ",";").split(";")
             if "OI" in register.keys():
                 if register["OI"] and register["OI"]==register["OI"]:
-                    oircid_list=register["OI"].rstrip().split("; ")
+                    orcid_list=register["OI"].rstrip().replace("; ",";").split(";")
             if "AF" in register.keys():
                 author_list=register["AF"].rstrip().split("\n")
                 if "RP" in register.keys():
@@ -204,8 +238,15 @@ class WebOfScience():
                         corresponding_last_name=register["RP"].split(",")[0]
                 for au in author_list:
                     raw_name=au.split(", ")
-                    names=raw_name[1]
-                    last_names=raw_name[0]
+                    if len(raw_name)==1:
+                        names=raw_name[0].capitalize()
+                        last_names=""
+                    elif len(raw_name)>2:
+                        names=" ".join(raw_name[:-1]).rstrip().capitalize()
+                        last_names=raw_name[-1].capitalize()
+                    else:
+                        names=raw_name[1].capitalize()
+                        last_names=raw_name[0].capitalize()
                     initials="".join([i[0].upper() for i in names.split(" ")])
                     entry={
                         'full_name':names+" "+last_names,
@@ -216,12 +257,18 @@ class WebOfScience():
                     #Checking if there is an external id
                     entry_ext=[]
                     for res in researchid_list:
-                        name,rid=res.split("/")
+                        try:
+                            name,rid=res.split("/")
+                        except:
+                            continue
                         if Levenshtein.ratio(name,last_names+", "+names)>0.8:
                             entry_ext.append({"source":"researchid","value":rid})
                             break
-                    for res in oircid_list:
-                        name,oid=res.split("/")
+                    for res in orcid_list:
+                        try:
+                            name,oid=res.split("/")
+                        except:
+                            continue
                         if Levenshtein.ratio(name,last_names+", "+names)>0.8:
                             entry_ext.append({"source":"orcid","value":oid})
                             break
@@ -263,9 +310,52 @@ class WebOfScience():
            #print(register["C1"].rstrip().split("\n"))
             for auwaf in register["C1"].rstrip().split("\n"):
                 aulen=len(auwaf.split(";"))
-                aff=auwaf.split("] ")[1]
-                name=",".join(aff.split(",")[:-1])
-                country=iso3166.countries_by_name.get(aff.split(", ")[-1].replace(".","").upper()).alpha2
+                if aulen==1:
+                    aff=auwaf
+                else:
+                    aff=auwaf.split("] ")[1]
+                try:
+                    name=",".join(aff.split(", ")[1])
+                except:
+                    name=""
+                if aff.split(", ")[-1].replace(".","").upper()=="ENGLAND":
+                    country="GB"
+                elif aff.split(", ")[-1].replace(".","").upper()=="CZECH REPUBLIC":
+                    country="CZ"
+                elif aff.split(", ")[-1].replace(".","").upper()=="VENEZUELA":
+                    country="VE"
+                elif aff.split(", ")[-1].replace(".","").upper()=="VIETNAM":
+                    country="VN"
+                elif aff.split(", ")[-1].replace(".","").upper()=="RUSSIA":
+                    country="RU"
+                elif aff.split(", ")[-1].replace(".","").upper()=="PEOPLES R CHINA":
+                    country="CN"
+                elif aff.split(", ")[-1].replace(".","").upper()=="SCOTLAND":
+                    country="GB"
+                elif aff.split(", ")[-1].replace(".","").upper()=="IRAN":
+                    country="IR"
+                elif aff.split(", ")[-1].replace(".","").upper()=="SOUTH KOREA":
+                    country="KR"
+                elif aff.split(", ")[-1].replace(".","").upper()=="U ARAB EMIRATES":
+                    country="AE"
+                elif aff.split(", ")[-1].replace(".","").upper()=="DEM REP CONGO":
+                    country="CD"
+                elif aff.split(", ")[-1].replace(".","").upper()=="TANZANIA":
+                    country="TZ"
+                elif aff.split(", ")[-1].replace(".","").upper()=="TAIWAN":
+                    country="TW"
+                elif aff.split(", ")[-1].replace(".","").upper()=="WALES":
+                    country="GB"
+                elif aff.split(", ")[-1].replace(".","").upper()=="MICRONESIA":
+                    country="FM"
+                elif aff.split(", ")[-1].replace(".","").upper()[-3:]=="USA":
+                    country="US"
+                else:
+                    try:
+                        country=iso3166.countries_by_name.get(aff.split(", ")[-1].replace(".","").upper()).alpha2
+                    except:
+                        print("could not parse: ",aff.split(", ")[-1].replace(".","").upper())
+                        country=""
                 for i in range(aulen):
                     inst.append({"name":name,"country":country}) ##LAST PART OF aff HAS THE COUNTRY
         return inst

@@ -51,14 +51,20 @@ class Scopus():
             data["issue"]=""
         if "Page start" in reg.keys():
             if reg["Page start"] and reg["Page start"] == reg["Page start"]: #checking for NaN in the second criteria
-                data["start_page"]=int(reg["Page start"])
+                try:
+                    data["start_page"]=int(reg["Page start"])
+                except:
+                    data["start_page"]=""
             else:
                 data["start_page"]=""
         else:
             data["start_page"]=""
         if "Page end" in reg.keys():
             if reg["Page end"] and reg["Page end"] == reg["Page end"]:
-                data["end_page"]=int(reg["Page end"])
+                try:
+                    data["end_page"]=int(reg["Page end"])
+                except:
+                    data["end_page"]=""
             else:
                 data["end_page"]=""
         else:
@@ -82,9 +88,17 @@ class Scopus():
                 if "Conference code" in reg.keys():
                     data["conference_code"]=reg["Conference code"]
         if "Language of Original Document" in reg.keys():
-            if reg["Language of Original Document"]:
+            if reg["Language of Original Document"] and reg["Language of Original Document"]==reg["Language of Original Document"]:
                 lang=reg["Language of Original Document"]
-                data["languages"]=[iso639.languages.get(name=lang).part1]
+                langs=lang.split("; ")
+                data["languages"]=[]
+                for lang in langs:
+                    if lang == 'Irish Gaelic':
+                        data["languages"].append("gd")
+                    elif lang == 'Gallegan':
+                        data["languages"].append("es")
+                    else:
+                        data["languages"].append(iso639.languages.get(name=lang).part1)
         if "Index Keywords" in reg.keys():
             if reg["Index Keywords"] and reg["Index Keywords"] == reg["Index Keywords"]:
                 data["keywords"]=reg["Index Keywords"].lower().split("; ")
@@ -132,6 +146,10 @@ class Scopus():
             if reg["References"] and reg["References"]==reg["References"]:
                 references=reg["References"].split("; ")
                 data["references_count"]=len(references)
+            else:
+                data["references_count"]=""
+        else:
+            data["references_count"]=""
 
         #CITATION SECTION
         if "Cited by" in reg.keys():
@@ -160,9 +178,9 @@ class Scopus():
         """
         authors=[]
         ids=None
-        corresponding_author=None
-        corresponding_address=None
-        corresponding_email=None
+        corresponding_author=""
+        corresponding_address=""
+        corresponding_email=""
         if "Correspondence Address" in reg.keys():
             if reg["Correspondence Address"] and reg["Correspondence Address"]==reg["Correspondence Address"]:
                 corresponding_list=reg["Correspondence Address"].split(";")
@@ -174,10 +192,12 @@ class Scopus():
             if reg["Authors"] and reg["Authors"]==reg["Authors"]:
                 if "Author(s) ID" in reg.keys(): ids=reg["Author(s) ID"].split(";")
                 for idx,author in enumerate(reg["Authors"].split(", ")):
-                    
-                    entry={"full_name":author,
-                    "last_names":author.split(" ")[0],
-                    "initials":author.split(" ")[1].replace(".","")}
+                    try:
+                        entry={"full_name":author,
+                        "last_names":author.split(" ")[0],
+                        "initials":author.split(" ")[1].replace(".","")}
+                    except:
+                        continue
                     #print("\n")
                     #print(author,corresponding_author)
                     #print("\n")
@@ -187,7 +207,10 @@ class Scopus():
                             entry["corresponding_address"]=corresponding_address
                             entry["corresponding_email"]=corresponding_email.replace("email: ","")
                     if ids:
-                        entry["external_ids"]=[{"source":"scopus","value":ids[idx]}]
+                        try:
+                            entry["external_ids"]=[{"source":"scopus","value":ids[idx]}]
+                        except:
+                            continue
                     authors.append(entry)
 
 
@@ -212,8 +235,12 @@ class Scopus():
 
         if "Authors with affiliations" in reg.keys():
             if reg["Authors with affiliations"] and reg["Authors with affiliations"]==reg["Authors with affiliations"]:
-                for auwaf in reg["Authors with affiliations"].split("; "):
-                    inst.append({"name":auwaf.split("., ")[1]})
+                auwaf_list=reg["Authors with affiliations"].split("; ")
+                for idx in range(len(auwaf_list)):
+                    try:
+                        inst.append({"name":auwaf_list[i].split("., ")[1]})
+                    except:
+                        continue
 
         return inst
 
@@ -234,7 +261,12 @@ class Scopus():
         source={}
 
         if "Source title" in reg.keys():
-            source["title"]=reg["Source title"]
+            if reg["Source title"] and reg["Source title"]==reg["Source title"]:
+                source["title"]=reg["Source title"]
+            else:
+                source["title"]=""
+        else:
+            source["title"]=""
         if "Abbreviated Source Title" in reg.keys():
             source["abbreviations"]=[]
             source["abbreviations"].append({"type":"unknown","value":reg["Abbreviated Source Title"]})

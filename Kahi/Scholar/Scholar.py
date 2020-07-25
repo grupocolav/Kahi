@@ -12,7 +12,7 @@ class Scholar():
     def parse_document(self,reg):
         data={}
         data["citations_count"]=int(reg["cites"]) if "cites" in reg.keys() else 0
-        data["citations_link"]=int(reg["cites_link"]) if "cites" in reg.keys() else ""
+        data["citations_link"]=reg["cites_link"] if "cites_link" in reg.keys() else ""
 
         return data
     

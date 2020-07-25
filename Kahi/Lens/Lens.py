@@ -54,7 +54,10 @@ class Lens():
             data["start_page"]=""
         if "end_page" in reg.keys():
             if reg["end_page"] and reg["end_page"]==reg["end_page"]:
-                data["end_page"]=int(reg["end_page"])
+                try:
+                    data["end_page"]=int(reg["end_page"])
+                except:
+                    data["end_page"]=""
             else:
                 data["end_page"]=""
         else:
@@ -172,18 +175,27 @@ class Lens():
             for author in reg["authors"]:
                 entry={}
                 if "first_name" in author.keys():
-                    entry["first_names"]=author["first_name"]
+                    if author["first_name"]==author["first_name"]:
+                        entry["first_names"]=author["first_name"]
+                    else:
+                        entry["first_names"]=""
                 else:
                     entry["first_names"]=""
-                if "first_name" in author.keys():
-                    entry["last_names"]=author["last_name"]
+                if "last_name" in author.keys():
+                    if author["last_name"]==author["last_name"]:
+                        entry["last_names"]=author["last_name"]
+                    else:
+                        entry["last_names"]=""
                 else:
                     entry["last_names"]=""
                 if "initials" in author.keys():
                     entry["initials"]=author["initials"]
                 else:
                     entry["initials"]=""
-                entry["full_name"]=entry["first_names"]+" "+entry["last_names"]
+                if entry["first_names"]:
+                    entry["full_name"]=entry["first_names"]+" "+entry["last_names"]
+                else:
+                    entry["full_name"]=entry["last_names"]
                 authors.append(entry)
 
         return authors
@@ -257,8 +269,26 @@ class Lens():
                 if reg["source"]["country"]:
                     if reg["source"]["country"].lower()=="united kingdom":
                         source["country"]='GB'
+                    elif reg["source"]["country"].lower()=="venezuela":
+                        source["country"]='VE'
+                    elif reg["source"]["country"].lower()=="united states":
+                        source["country"]='US'
+                    elif reg["source"]["country"].lower()=="czech republic":
+                        source["country"]="CZ"
+                    elif reg["source"]["country"].lower()=="vietnam":
+                        source["country"]="VN"
+                    elif reg["source"]["country"].lower()=="russia":
+                        source["country"]="RU"
+                    elif reg["source"]["country"].lower()=="peoples r china":
+                        source["country"]="CN"
+                    elif reg["source"]["country"].lower()=="scotland":
+                        source["country"]="GB"
                     else:
-                        source["country"]=iso3166.countries_by_name.get(reg["source"]["country"].upper()).alpha2
+                        try:
+                            source["country"]=iso3166.countries_by_name.get(reg["source"]["country"].upper()).alpha2
+                        except:
+                            print("Could not parse: ",reg["source"]["country"].upper())
+                            source["country"]=""
                 else:
                     source["country"]=""
             else:
