@@ -93,7 +93,10 @@ class Lens():
         if "date_published" in reg.keys():
             if "date" in reg["date_published"].keys():
                 if reg["date_published"]["date"] and reg["date_published"]["date"]==reg["date_published"]["date"]:
-                    data["date_published"]=int(dt.strptime(reg["date_published"]["date"],"%Y-%m-%dT%H:%M:%S%z").timestamp())
+                    try:
+                        data["date_published"]=int(dt.strptime(reg["date_published"]["date"],"%Y-%m-%dT%H:%M:%S%z").timestamp())
+                    except:
+                        data["date_published"]=""
                 else:
                     data["date_published"]=""
             else:

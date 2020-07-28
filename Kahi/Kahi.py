@@ -308,6 +308,17 @@ class Kahi(KahiBase):
                         ids.append(ext)
                         ids_source.append(source)
                         ids_id.append(idx)
+        if scholar:
+            if scholar["external_ids"]:
+                for ext in scholar["external_ids"]:
+                    source=ext["source"]
+                    idx=ext["id"]
+                    if not idx in ids_id:
+                        ids.append(ext)
+                        ids_source.append(source)
+                        ids_id.append(idx)
+        
+
         document["external_ids"]=ids
 
         #urls
@@ -1101,7 +1112,14 @@ class Kahi(KahiBase):
         Build the CoLav formatted register according to a hierarchy
         Save the register in the CoLav db, if there is no register already there with the same DOI
         """
-
+        #check if doi alredy in the db
+        documentdb=None
+        documentdb=self.colavdb["documents"].find_one({"external_ids.id":doi})
+        if documentdb:
+            if self.verbose>3:
+                print("Document already in db. Skipping")
+                return 0
+            else: pass
         
         wosregister=self.wosdb["stage"].find_one({"DI":doi})
         if wosregister:
@@ -1250,29 +1268,23 @@ class Kahi(KahiBase):
                 source_id=""
         else:
             source_id=sourcedb["_id"]
-        #check if doi alredy in the db
-        documentdb=None
-        documentdb=self.colavdb["documents"].find_one({"external_ids.id":doi})
-        if documentdb:
-            if self.verbose>3: print("Document already in db. Skipping")
-            else: pass
-        else:
-            #Assemble the document with source, author and affiliation ids
-            #update affiliation information
-            #update author information
-            document["authors"]=[]
-            for i in range(len(authors)):
-                entry={"id":author_ids[i],"affiliations":[{"id":institutions_ids[i],"branch":[]}]}
-                entry["corresponding"]=authors[i]["corresponding"]
-                entry["corresponding_email"]=authors[i]["corresponding_email"]
-                entry["corresponding_address"]=authors[i]["corresponding_address"]
-                document["authors"].append(entry)
-            #update source information
-            document["source"]=source_id
-            if self.verbose>3:print(document)
-            #insert the document
-            if insert: result=self.colavdb["documents"].insert_one(document)
-            else: result=""
+        
+        #Assemble the document with source, author and affiliation ids
+        #update affiliation information
+        #update author information
+        document["authors"]=[]
+        for i in range(len(authors)):
+            entry={"id":author_ids[i],"affiliations":[{"id":institutions_ids[i],"branch":[]}]}
+            entry["corresponding"]=authors[i]["corresponding"]
+            entry["corresponding_email"]=authors[i]["corresponding_email"]
+            entry["corresponding_address"]=authors[i]["corresponding_address"]
+            document["authors"].append(entry)
+        #update source information
+        document["source"]=source_id
+        if self.verbose>3:print(document)
+        #insert the document
+        if insert: result=self.colavdb["documents"].insert_one(document)
+        else: result=""
         
 
     def update(self,num_jobs=8,lens=1,wos=0,scielo=0,scopus=0):
@@ -1323,10 +1335,4 @@ class Kahi(KahiBase):
         uniq=set(lens_list)
         scopus_not_scielo_not_wos_not_lens_list=set(scopus_list)-set(scopus_list).intersection(uniq)
         if scopus:
-            for doi in scopus_not_scielo_not_wos_not_lens_list:
-                print(doi)
-                documentdb=self.colavdb["documents"].find_one({"external_ids.id":doi})
-                if documentdb:
-                    if self.verbose>3: print("Document already in db. Skipping")
-                else: 
-                    self.update_one(doi)
+            Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in scopus_not_scielo_not_wos_not_lens_list)

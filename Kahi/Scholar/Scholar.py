@@ -1,6 +1,7 @@
 from time import time
 from datetime import datetime as dt
 import iso3166
+from fuzzywuzzy import fuzz
 
 class Scholar():
     def __init__(self):
@@ -13,8 +14,41 @@ class Scholar():
         data={}
         data["citations_count"]=int(reg["cites"]) if "cites" in reg.keys() else 0
         data["citations_link"]=reg["cites_link"] if "cites_link" in reg.keys() else ""
+        data.external_ids=[{"source":"scholar","id":reg["cid"]}] if "cid" in reg.keys() else []
 
+ 
         return data
+
+    def parse_authors(self,reg):
+        authors=[]
+        fullname_list=[]
+        if "author" in reg.keys():
+            if reg["authros"]:
+                for author in reg["authors"].rstrip().split(" and "):
+                    entry={}
+                    entry["national_id"]=""
+                    entry["first_names"]=""
+                    entry["last_names"]=""
+                    entry["aliases"]=[]
+                    entry["external_ids"]=[]
+                    names_list=author.split(", ")
+                    if names_list>0: entry["last_names"]=names_list[0]
+                    if names_list>1: entry["first_names"]=names_list[1]
+                    entry["full_name"]=entry["first_names"]+" "+entry["last_names"]
+                    entry["initials"]=entry["first_names"]
+                    
+                    authors.append(entry)
+                    fullname_list.append(entry["full_name"])
+        
+        if "profiles" in reg.keys():
+            if reg["profiles"]:
+                for name in reg["profiles"].keys():
+                    for i,author in enumerate(fullname_list): 
+                        if fuzz.partial_ratio(name,)>0.8:
+                            authors[i]["external_ids"].append({"source":"scholar","value":reg["profiles"][name]})
+                            break
+   
+        return authors
     
     def parse_one(self,register):
         """
