@@ -1,10 +1,11 @@
 from pymongo import MongoClient
 import json
 from time import time
-from langdetect import detect
+from textblob import TextBlob
 from currency_converter import CurrencyConverter
 from fuzzywuzzy import fuzz,process
-#import Levenshtein
+
+from joblib import Parallel, delayed
 
 from Kahi.KahiBase import KahiBase
 
@@ -97,6 +98,7 @@ class Kahi(KahiBase):
         document : dict
             Aggregated document information in CoLav standard
         """
+        if sellf.verbose==5: print("JOINING DOCUMENTS")
         document={}
         document["updated"]=int(time())
 
@@ -121,7 +123,7 @@ class Kahi(KahiBase):
         if lens:
             if lens["title"]:
                 title=lens["title"]
-                lang=detect(title)
+                lang=TextBlob(title).detect_language()
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -129,7 +131,7 @@ class Kahi(KahiBase):
         if scielo:
             if scielo["title"]:
                 title=scielo["title"]
-                lang=detect(title)
+                lang=TextBlob(title).detect_language()
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -137,7 +139,7 @@ class Kahi(KahiBase):
         if wos:
             if wos["title"]:
                 title=wos["title"]
-                lang=detect(title)
+                lang=TextBlob(title).detect_language()
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -145,7 +147,7 @@ class Kahi(KahiBase):
         if scopus:
             if scopus["title"]:
                 title=scopus["title"]
-                lang=detect(title)
+                lang=TextBlob(title).detect_language()
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -411,6 +413,7 @@ class Kahi(KahiBase):
         authors : list
             Aggregated authors information in CoLav standard
         """
+        if sellf.verbose==5: print("JOINING AUTHORS")
         authors=[]
         names=[]
         author_count=0
@@ -575,6 +578,7 @@ class Kahi(KahiBase):
         institutions : list
             Aggregated institutions information in CoLav standard
         """
+        if sellf.verbose==5: print("JOINING INSTITUTIONS")
         institutions=[]
         updated=int(time())
 
@@ -587,14 +591,13 @@ class Kahi(KahiBase):
                 entry={}
                 aliases=[]
                 if len(lens[i])==0 or not lens[i]:
-                    entry["name"]=""
                     entry["id"]=""
                     entry["alias"]=[]
                     print("No institution to find")
                 elif lens[i][0]["grid_id"]:
                     response=self.griddb["stage"].find_one({"id":lens[i][0]["grid_id"]})
                     entry["id"]=response["_id"]
-                    print("Found institution: ",response)
+                    print("Found institution: ",lens[i][0]["name"])
                     institutions_found+=1
                     aliases.append(lens[i][0]["name"])
                     if wos:
@@ -608,13 +611,14 @@ class Kahi(KahiBase):
                         except:
                             pass
                     entry["aliases"]=list(set(aliases))
+                    self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif lens[i][0]["grid_id"]=="" and lens[i][0]["name"]!="":
                     name=lens[i][0]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.ratio)
                     if rating>90:
                         entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",match)
+                        print("Found institution: ",lens[i][0]["name"])
                         institutions_found+=1
                         aliases.append(lens[i][0]["name"])
                         if wos:
@@ -628,12 +632,13 @@ class Kahi(KahiBase):
                             except:
                                 pass
                         entry["aliases"]=list(set(aliases))
+                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else:
                         match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.partial_ratio)
                         if rating>90:
                             entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                            print("Found institution: ",match)
+                            print("Found institution: ",lens[i][0]["name"])
                             institutions_found+=1
                             aliases.append(lens[i][0]["name"])
                             if wos:
@@ -646,14 +651,15 @@ class Kahi(KahiBase):
                                     aliases.append(scielo[i]["name"])
                                 except:
                                     pass
-                            entry["aliases"]=list(set(aliases))
+                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif wos: #if lens does not have a grid id
                     name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.ratio)
                     if rating>90:
                         entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",match)
+
+                        print("Found institution: ",wos[i]["name"])
                         institutions_found+=1
                         aliases.append(wos[i]["name"])
                         if scielo:
@@ -662,6 +668,7 @@ class Kahi(KahiBase):
                             except:
                                 pass
                         entry["aliases"]=list(set(aliases))
+                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else: #if rating is lower than 90 try a different scorer
                         match,rating=process.extractOne(name,self.grid_names,
                                                         scorer=fuzz.partial_ratio)
@@ -676,6 +683,7 @@ class Kahi(KahiBase):
                                 except:
                                     pass
                             entry["aliases"]=list(set(aliases))
+                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                         else: #if the new scorer does not work continue to scielo
                             if scielo:
                                 name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
@@ -683,10 +691,11 @@ class Kahi(KahiBase):
                                                                 scorer=fuzz.ratio)
                                 if rating>90:
                                     entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                                    print("Found institution: ",match)
+                                    print("Found institution: ",scielo[i]["name"])
                                     institutions_found+=1
                                     aliases.append(scielo[i]["name"])
                                     entry["aliases"]=aliases
+                                    self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                                 else:
                                     match,rating=process.extractOne(name,self.grid_names,
                                                                     scorer=fuzz.partial_ratio)
@@ -696,26 +705,28 @@ class Kahi(KahiBase):
                                         institutions_found+=1
                                         aliases.append(scielo[i]["name"])
                                         entry["aliases"]=aliases
+                                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif scielo: #same as wos
                     name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.ratio)
                     if rating>90:
                         entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",match)
+                        print("Found institution: ",scielo[i]["name"])
                         institutions_found+=1
-                        aliases.append(wos[i]["name"])
+                        aliases.append(scielo[i]["name"])
+                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else: #if rating is lower than 90 try a different scorer
                         match,rating=process.extractOne(name,self.grid_names,
                                                         scorer=fuzz.partial_ratio)
                         if rating>90:
                             entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                            print("Found institution: ",match)
+                            print("Found institution: ",scielo[i]["name"])
                             institutions_found+=1
-                            aliases.append(wos[i]["name"])
+                            aliases.append(scielo[i]["name"])
                             entry["aliases"]=list(set(aliases))
+                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                         else:
-                            entry["name"]=""
                             entry["id"]=""
                             entry["alias"]=[]
                             print("Institution not found")
@@ -724,7 +735,6 @@ class Kahi(KahiBase):
                 #SCOPUS NOT YET SUPPORTED
                 #ADD SCOPUS WHEN IT IS TIME TO ADD THE DOIS ONLY IN SCOPUS
                 else:
-                    entry["name"]=""
                     entry["id"]=""
                     entry["alias"]=[]
                     print("Institution not found")
@@ -738,7 +748,11 @@ class Kahi(KahiBase):
         elif wos: #if not lens at all
             institutions_count=len(wos)
             print("Searching: ",institutions_count," institutions.")
-            for i in institutions_count:
+            print(wos)
+            for i in range(institutions_count):
+                entry={}
+                aliases=[]
+                
                 name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                 match,rating=process.extractOne(name,self.grid_names,
                                                 scorer=fuzz.ratio)
@@ -788,16 +802,22 @@ class Kahi(KahiBase):
                                     aliases.append(scielo[i]["name"])
                                     entry["aliases"]=aliases
                                 else:
+                                    entry["id"]=""
+                                    entry["aliases"]=""
                                     print("Institution not found. Best match was: ",match,
                                           " with rating: ",rating)
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
                     return institutions
+            print(len(institutions))
+            return institutions
         elif scielo:
             institutions_count=len(scielo)
             print("Searching: ",institutions_count," institutions.")
-            for i in institutions_count:
+            for i in range(institutions_count):
+                entry={}
+                aliases=[]
                 name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                 match,rating=process.extractOne(name,self.grid_names,
                                                 scorer=fuzz.ratio)
@@ -805,7 +825,7 @@ class Kahi(KahiBase):
                     entry["id"]=self.grid_ids[self.grid_names.index(match)]
                     print("Found institution: ",match)
                     institutions_found+=1
-                    aliases.append(wos[i]["name"])
+                    aliases.append(scielo[i]["name"])
                 else: #if rating is lower than 90 try a different scorer
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.partial_ratio)
@@ -813,8 +833,13 @@ class Kahi(KahiBase):
                         entry["id"]=self.grid_ids[self.grid_names.index(match)]
                         print("Found institution: ",match)
                         institutions_found+=1
-                        aliases.append(wos[i]["name"])
+                        aliases.append(scielo[i]["name"])
                         entry["aliases"]=list(set(aliases))
+                    else:
+                        entry["id"]=""
+                        entry["aliases"]=""
+                        print("Institution not found. Best match was: ",match,
+                                " with rating: ",rating)
                 #elif scopus
                 #SCOPUS NOT YET SUPPORTED
                 #ADD SCOPUS WHEN IT IS TIME TO ADD THE DOIS ONLY IN SCOPUS
@@ -822,6 +847,8 @@ class Kahi(KahiBase):
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
                     return institutions
+            print(len(institutions))
+            return institutions
 
         elif scopus:
             pass
@@ -899,6 +926,7 @@ class Kahi(KahiBase):
         source : dict
             Aggregated source information in CoLav standard
         """
+        if sellf.verbose==5: print("JOINING SOURCES")
         source={}
         source["updated"]=int(time())
         source["dbs"]=[]
@@ -1238,9 +1266,8 @@ class Kahi(KahiBase):
             else: result=""
         
 
-    def update(self,lens=1,wos=0,scielo=0,scopus=0):
+    def update(self,num_jobs=8,lens=1,wos=0,scielo=0,scopus=0):
         #Get the list of al unique dois in the raw dbs
-        db_list=[self.lensdb,self.wosdb,self.scielodb,self.scopusdb]
         #doi_list=['10.15446/ing.investig.v35n3.49498','10.15446/historelo.v7n14.47784',
         #'10.15446/cuad.econ.v35n68.52801','10.17230/co-herencia.16.30.6',
         #'10.22319/rmcp.v10i2.4652','10.18046/j.estger.2018.147.2643',
@@ -1255,9 +1282,8 @@ class Kahi(KahiBase):
                         if ext["type"]=="doi":
                             lens_list.append(ext["value"])
         if lens:
-            for doi in lens_list:
-                print(doi)
-                self.update_one(doi)
+            Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in lens_list)
+
         
         wos_list=[]
         for reg in self.wosdb["stage"].find():
@@ -1266,9 +1292,7 @@ class Kahi(KahiBase):
                     wos_list.append(reg["DI"])
         wos_not_lens_list=set(wos_list)-set(wos_list).intersection(lens_list)
         if wos:
-            for doi in wos_not_lens_list:
-                print(doi)
-                self.update_one(doi)
+            Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in wos_not_lens_list)
 
         scielo_list=[]
         for reg in self.scielodb["stage"].find():
@@ -1279,9 +1303,7 @@ class Kahi(KahiBase):
         uniq=set(lens_list)
         scielo_not_wos_not_lens_list=set(scielo_list)-set(scielo_list).intersection(uniq)
         if scielo:
-            for doi in scielo_not_wos_not_lens_list:
-                print(doi)
-                self.update_one(doi)
+            Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in scielo_not_wos_not_lens_list)
 
         scopus_list=[]
         for reg in self.scopusdb["stage"].find():

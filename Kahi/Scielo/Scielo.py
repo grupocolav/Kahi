@@ -3,7 +3,7 @@ from datetime import datetime as dt
 import iso3166
 import iso639
 import json
-import Levenshtein
+from fuzzywuzzy import fuzz
 
 # TODO:
 # * Check how the email, orcidid and researcherid in the author information
@@ -264,7 +264,7 @@ class Scielo():
                     name,rid=res.split("/")
                 except:
                     continue
-                if Levenshtein.ratio(name,last_names+", "+names)>0.8:
+                if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
                     entry_ext.append({"source":"researchid","value":rid})
                     break
             for res in orcid_list:
@@ -272,7 +272,7 @@ class Scielo():
                     name,oid=res.split("/")
                 except:
                     continue
-                if Levenshtein.ratio(name,last_names+", "+names)>0.8:
+                if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
                     entry_ext.append({"source":"orcid","value":oid})
                     break
             entry["external_ids"]=entry_ext
