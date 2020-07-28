@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import json
 from time import time
-from textblob import TextBlob
+from langid import classify
 from currency_converter import CurrencyConverter
 from fuzzywuzzy import fuzz,process
 
@@ -98,7 +98,7 @@ class Kahi(KahiBase):
         document : dict
             Aggregated document information in CoLav standard
         """
-        if sellf.verbose==5: print("JOINING DOCUMENTS")
+        if self.verbose==5: print("JOINING DOCUMENTS")
         document={}
         document["updated"]=int(time())
 
@@ -120,10 +120,13 @@ class Kahi(KahiBase):
         titles=[]
         titles_lang=[]
         titles_idx=[]
+
+        print("Slow check 0")
+
         if lens:
             if lens["title"]:
                 title=lens["title"]
-                lang=TextBlob(title).detect_language()
+                lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -131,7 +134,7 @@ class Kahi(KahiBase):
         if scielo:
             if scielo["title"]:
                 title=scielo["title"]
-                lang=TextBlob(title).detect_language()
+                lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -139,7 +142,7 @@ class Kahi(KahiBase):
         if wos:
             if wos["title"]:
                 title=wos["title"]
-                lang=TextBlob(title).detect_language()
+                lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
@@ -147,12 +150,14 @@ class Kahi(KahiBase):
         if scopus:
             if scopus["title"]:
                 title=scopus["title"]
-                lang=TextBlob(title).detect_language()
+                lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
                     titles_lang.append(lang)
                     titles_idx.append(title.lower())
         
+        print("Slow check 1")
+
         for idx,title in enumerate(titles): 
             document["titles"].append({"title":title,"lang":titles_lang[idx],"title_idx":titles_idx[idx]})
 
@@ -243,6 +248,8 @@ class Kahi(KahiBase):
             if lens["year_published"]:
                 document["year_published"]=lens["year_published"]
 
+        print("Slow check 2")
+
         #author count
         if scopus:
             document["author_count"]=scopus["author_count"] if scopus["author_count"] else ""
@@ -264,7 +271,8 @@ class Kahi(KahiBase):
         if scopus:
             document["funding_details"]=scopus["funding_details"] if scopus["funding_details"] else ""
 
-
+        print("Slow check 3")
+ 
         #external ids
         ids=[]
         ids_source=[]
@@ -330,6 +338,7 @@ class Kahi(KahiBase):
             document["is_open_access"]= oadoi["is_open_access"] if "is_open_access" in oadoi.keys() else ""
             document["open_access_status"]= oadoi["open_access_status"] if "open_access_status" in oadoi.keys() else ""
         
+        print("Slow check 4")
 
         #languages
         languages=[]
@@ -413,7 +422,7 @@ class Kahi(KahiBase):
         authors : list
             Aggregated authors information in CoLav standard
         """
-        if sellf.verbose==5: print("JOINING AUTHORS")
+        if self.verbose==5: print("JOINING AUTHORS")
         authors=[]
         names=[]
         author_count=0
@@ -464,24 +473,12 @@ class Kahi(KahiBase):
                 if "corresponding" in scopus[i].keys():
                     if scopus[i]["corresponding"] != "":
                         entry["corresponding"]=scopus[i]["corresponding"]
-                    else:
-                        entry["corresponding"]=""
-                else:
-                    entry["corresponding"]=""
                 if "corresponding_email" in scopus[i].keys():
                     if scopus[i]["corresponding_email"] != "":
                         entry["corresponding_email"]=scopus[i]["corresponding_email"]
-                    else:
-                        entry["corresponding_email"]=""
-                else:
-                    entry["corresponding_email"]=""
                 if "corresponding_address" in scopus[i].keys():
                     if scopus[i]["corresponding_address"] != "":
                         entry["corresponding_address"]=scopus[i]["corresponding_address"]
-                    else:
-                        entry["corresponding_address"]=""
-                else:
-                    entry["corresponding_address"]=""
             if scielo:
                 entry["full_name"]=scielo[i]["full_name"] if "full_name" in scielo[i].keys() else ""
                 entry["first_names"]=scielo[i]["first_names"] if "first_names" in scielo[i].keys() else ""
@@ -492,24 +489,12 @@ class Kahi(KahiBase):
                 if "corresponding" in scielo[i].keys():
                     if scielo[i]["corresponding"] != "":
                         entry["corresponding"]=scielo[i]["corresponding"]
-                    else:
-                        entry["corresponding"]=""
-                else:
-                    entry["corresponding"]=""
                 if "corresponding_email" in scielo[i].keys():
                     if scielo[i]["corresponding_email"] != "":
                         entry["corresponding_email"]=scielo[i]["corresponding_email"]
-                    else:
-                        entry["corresponding_email"]=""
-                else:
-                    entry["corresponding_email"]=""
                 if "corresponding_address" in scielo[i].keys():
                     if scielo[i]["corresponding_address"] != "":
                         entry["corresponding_address"]=scielo[i]["corresponding_address"]
-                    else:
-                        entry["corresponding_address"]=""
-                else:
-                    entry["corresponding_address"]=""
             if wos:
                 entry["full_name"]=wos[i]["full_name"] if "full_name" in wos[i].keys() else ""
                 entry["first_names"]=wos[i]["first_names"] if "first_names" in wos[i].keys() else ""
@@ -520,24 +505,14 @@ class Kahi(KahiBase):
                 if "corresponding" in wos[i].keys():
                     if wos[i]["corresponding"] != "":
                         entry["corresponding"]=wos[i]["corresponding"]
-                    else:
-                        entry["corresponding"]=""
-                else:
-                    entry["corresponding"]=""
                 if "corresponding_email" in wos[i].keys():
                     if wos[i]["corresponding_email"] != "":
                         entry["corresponding_email"]=wos[i]["corresponding_email"]
-                    else:
-                        entry["corresponding_email"]=""
                 else:
                     entry["corresponding_email"]=""
                 if "corresponding_address" in wos[i].keys():
                     if wos[i]["corresponding_address"] != "":
                         entry["corresponding_address"]=wos[i]["corresponding_address"]
-                    else:
-                        entry["corresponding_address"]=""
-                else:
-                    entry["corresponding_address"]=""
             if lens:
                 entry["full_name"]=lens[i]["full_name"] if "full_name" in lens[i].keys() else ""
                 entry["first_names"]=lens[i]["first_names"] if "first_names" in lens[i].keys() else ""
@@ -578,7 +553,7 @@ class Kahi(KahiBase):
         institutions : list
             Aggregated institutions information in CoLav standard
         """
-        if sellf.verbose==5: print("JOINING INSTITUTIONS")
+        if self.verbose==5: print("JOINING INSTITUTIONS")
         institutions=[]
         updated=int(time())
 
@@ -590,9 +565,9 @@ class Kahi(KahiBase):
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
+                entry["id"]=""
+                entry["aliases"]=[]
                 if len(lens[i])==0 or not lens[i]:
-                    entry["id"]=""
-                    entry["alias"]=[]
                     print("No institution to find")
                 elif lens[i][0]["grid_id"]:
                     response=self.griddb["stage"].find_one({"id":lens[i][0]["grid_id"]})
@@ -611,7 +586,7 @@ class Kahi(KahiBase):
                         except:
                             pass
                     entry["aliases"]=list(set(aliases))
-                    self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif lens[i][0]["grid_id"]=="" and lens[i][0]["name"]!="":
                     name=lens[i][0]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
@@ -632,7 +607,7 @@ class Kahi(KahiBase):
                             except:
                                 pass
                         entry["aliases"]=list(set(aliases))
-                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else:
                         match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.partial_ratio)
@@ -651,7 +626,7 @@ class Kahi(KahiBase):
                                     aliases.append(scielo[i]["name"])
                                 except:
                                     pass
-                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif wos: #if lens does not have a grid id
                     name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
@@ -668,7 +643,7 @@ class Kahi(KahiBase):
                             except:
                                 pass
                         entry["aliases"]=list(set(aliases))
-                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else: #if rating is lower than 90 try a different scorer
                         match,rating=process.extractOne(name,self.grid_names,
                                                         scorer=fuzz.partial_ratio)
@@ -683,7 +658,7 @@ class Kahi(KahiBase):
                                 except:
                                     pass
                             entry["aliases"]=list(set(aliases))
-                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                         else: #if the new scorer does not work continue to scielo
                             if scielo:
                                 name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
@@ -695,7 +670,7 @@ class Kahi(KahiBase):
                                     institutions_found+=1
                                     aliases.append(scielo[i]["name"])
                                     entry["aliases"]=aliases
-                                    self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                                 else:
                                     match,rating=process.extractOne(name,self.grid_names,
                                                                     scorer=fuzz.partial_ratio)
@@ -705,7 +680,7 @@ class Kahi(KahiBase):
                                         institutions_found+=1
                                         aliases.append(scielo[i]["name"])
                                         entry["aliases"]=aliases
-                                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif scielo: #same as wos
                     name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                     match,rating=process.extractOne(name,self.grid_names,
@@ -715,7 +690,7 @@ class Kahi(KahiBase):
                         print("Found institution: ",scielo[i]["name"])
                         institutions_found+=1
                         aliases.append(scielo[i]["name"])
-                        self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else: #if rating is lower than 90 try a different scorer
                         match,rating=process.extractOne(name,self.grid_names,
                                                         scorer=fuzz.partial_ratio)
@@ -725,10 +700,10 @@ class Kahi(KahiBase):
                             institutions_found+=1
                             aliases.append(scielo[i]["name"])
                             entry["aliases"]=list(set(aliases))
-                            self.griddb.update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                         else:
                             entry["id"]=""
-                            entry["alias"]=[]
+                            entry["aliases"]=[]
                             print("Institution not found")
 
                 #elif scopus
@@ -736,7 +711,7 @@ class Kahi(KahiBase):
                 #ADD SCOPUS WHEN IT IS TIME TO ADD THE DOIS ONLY IN SCOPUS
                 else:
                     entry["id"]=""
-                    entry["alias"]=[]
+                    entry["aliases"]=[]
                     print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
@@ -926,7 +901,7 @@ class Kahi(KahiBase):
         source : dict
             Aggregated source information in CoLav standard
         """
-        if sellf.verbose==5: print("JOINING SOURCES")
+        if self.verbose==5: print("JOINING SOURCES")
         source={}
         source["updated"]=int(time())
         source["dbs"]=[]
