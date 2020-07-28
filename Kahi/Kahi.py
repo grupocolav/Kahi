@@ -121,8 +121,6 @@ class Kahi(KahiBase):
         titles_lang=[]
         titles_idx=[]
 
-        print("Slow check 0")
-
         if lens:
             if lens["title"]:
                 title=lens["title"]
@@ -155,8 +153,6 @@ class Kahi(KahiBase):
                     titles.append(title)
                     titles_lang.append(lang)
                     titles_idx.append(title.lower())
-        
-        print("Slow check 1")
 
         for idx,title in enumerate(titles): 
             document["titles"].append({"title":title,"lang":titles_lang[idx],"title_idx":titles_idx[idx]})
@@ -248,8 +244,6 @@ class Kahi(KahiBase):
             if lens["year_published"]:
                 document["year_published"]=lens["year_published"]
 
-        print("Slow check 2")
-
         #author count
         if scopus:
             document["author_count"]=scopus["author_count"] if scopus["author_count"] else ""
@@ -270,8 +264,6 @@ class Kahi(KahiBase):
         #funding details
         if scopus:
             document["funding_details"]=scopus["funding_details"] if scopus["funding_details"] else ""
-
-        print("Slow check 3")
  
         #external ids
         ids=[]
@@ -338,8 +330,6 @@ class Kahi(KahiBase):
             document["is_open_access"]= oadoi["is_open_access"] if "is_open_access" in oadoi.keys() else ""
             document["open_access_status"]= oadoi["open_access_status"] if "open_access_status" in oadoi.keys() else ""
         
-        print("Slow check 4")
-
         #languages
         languages=[]
         if wos:
@@ -727,7 +717,8 @@ class Kahi(KahiBase):
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
-                
+                entry["id"]=""
+                entry["aliases"]=[]
                 name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                 match,rating=process.extractOne(name,self.grid_names,
                                                 scorer=fuzz.ratio)
@@ -742,6 +733,7 @@ class Kahi(KahiBase):
                         except:
                             pass
                     entry["aliases"]=list(set(aliases))
+                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 else: #if rating is lower than 90 try a different scorer
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.partial_ratio)
@@ -756,6 +748,7 @@ class Kahi(KahiBase):
                             except:
                                 pass
                         entry["aliases"]=list(set(aliases))
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else: #if the new scorer does not work continue to scielo
                         if scielo:
                             name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
@@ -776,6 +769,7 @@ class Kahi(KahiBase):
                                     institutions_found+=1
                                     aliases.append(scielo[i]["name"])
                                     entry["aliases"]=aliases
+                                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                                 else:
                                     entry["id"]=""
                                     entry["aliases"]=""
@@ -793,6 +787,8 @@ class Kahi(KahiBase):
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
+                entry["id"]=""
+                entry["aliases"]=[]
                 name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
                 match,rating=process.extractOne(name,self.grid_names,
                                                 scorer=fuzz.ratio)
@@ -801,6 +797,7 @@ class Kahi(KahiBase):
                     print("Found institution: ",match)
                     institutions_found+=1
                     aliases.append(scielo[i]["name"])
+                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 else: #if rating is lower than 90 try a different scorer
                     match,rating=process.extractOne(name,self.grid_names,
                                                     scorer=fuzz.partial_ratio)
@@ -810,6 +807,7 @@ class Kahi(KahiBase):
                         institutions_found+=1
                         aliases.append(scielo[i]["name"])
                         entry["aliases"]=list(set(aliases))
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                     else:
                         entry["id"]=""
                         entry["aliases"]=""
@@ -826,7 +824,43 @@ class Kahi(KahiBase):
             return institutions
 
         elif scopus:
-            pass
+            institutions_count=len(scopus)
+            print("Searching: ",institutions_count," institutions.")
+            for i in range(institutions_count):
+                entry={}
+                aliases=[]
+                entry["id"]=""
+                entry["aliases"]=[]
+                name=scopus[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
+                match,rating=process.extractOne(name,self.grid_names,
+                                                scorer=fuzz.ratio)
+                if rating>90:
+                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
+                    print("Found institution: ",scopus[i]["name"])
+                    institutions_found+=1
+                    aliases.append(scopus[i]["name"])
+                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                else: #if rating is lower than 90 try a different scorer
+                    match,rating=process.extractOne(name,self.grid_names,
+                                                    scorer=fuzz.partial_ratio)
+                    if rating>90:
+                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
+                        print("Found institution: ",scopus[i]["name"])
+                        institutions_found+=1
+                        aliases.append(scopus[i]["name"])
+                        entry["aliases"]=list(set(aliases))
+                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                    else:
+                        entry["id"]=""
+                        entry["aliases"]=""
+                        print("Institution not found. Best match was: ",match,
+                                " with rating: ",rating)
+                institutions.append(entry)            
+                if institutions_count==institutions_found:
+                    print("FOUND ALL INSTITUTIONS")
+                    return institutions
+            print(len(institutions))
+            return institutions
 
 
         #institutions_count=0
