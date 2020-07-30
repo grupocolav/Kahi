@@ -249,7 +249,6 @@ class Scielo():
             else:
                 names=raw_name[1].capitalize()
                 last_names=raw_name[0].capitalize()
-            print(names.split(" "))
             initials="".join([i[0].upper() for i in names.split(" ")])
             entry={
                 'full_name':names+" "+last_names,
@@ -314,10 +313,20 @@ class Scielo():
             for auwaf in register["C1"].rstrip().split("\n"):
                 aulen=len(auwaf.split(";"))
                 if aulen==1:
-                    aff=auwaf
+                    auaff=auwaf.split("] ")
+                    if len(auaff)==1:
+                        aff=auwaf
+                        authors=[""]
+                    else:
+                        aff=auaff[1]
+                        authors=[auaff[0][1:]]
                 else:
                     aff=auwaf.split("] ")[1]
-                name=",".join(aff.split(",")[:-1])
+                    authors=auwaf.split("] ")[0][1:].split("; ")
+                try:
+                    name="".join(aff.split(", ")[0])
+                except:
+                    name=""
                 if aff.split(", ")[-1].replace(".","").upper()=="ENGLAND":
                     country="GB"
                 elif aff.split(", ")[-1].replace(".","").upper()=="CZECH REPUBLIC":
@@ -359,7 +368,8 @@ class Scielo():
                         print("could not parse: ",aff.split(", ")[-1].replace(".","").upper())
                         country=""
                 for i in range(aulen):
-                    inst.append({"name":name,"country":country}) ##LAST PART OF aff HAS THE COUNTRY
+                    author=authors[i] if authors else ""
+                    inst.append({"name":name,"countries":[country],"author":author}) ##LAST PART OF aff HAS THE COUNTRY
         return inst
 
     def parse_source(self,register):

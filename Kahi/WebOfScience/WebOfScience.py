@@ -204,6 +204,7 @@ class WebOfScience():
             data["citations_count"]=""
 
         return data
+
     
     def parse_authors(self,register):
         """
@@ -311,11 +312,18 @@ class WebOfScience():
             for auwaf in register["C1"].rstrip().split("\n"):
                 aulen=len(auwaf.split(";"))
                 if aulen==1:
-                    aff=auwaf
+                    auaff=auwaf.split("] ")
+                    if len(auaff)==1:
+                        aff=auwaf
+                        authors=[""]
+                    else:
+                        aff=auaff[1]
+                        authors=[auaff[0][1:]]
                 else:
                     aff=auwaf.split("] ")[1]
+                    authors=auwaf.split("] ")[0][1:].split("; ")
                 try:
-                    name="".join(aff.split(", ")[1])
+                    name="".join(aff.split(", ")[0])
                 except:
                     name=""
                 if aff.split(", ")[-1].replace(".","").upper()=="ENGLAND":
@@ -357,7 +365,8 @@ class WebOfScience():
                         print("could not parse: ",aff.split(", ")[-1].replace(".","").upper())
                         country=""
                 for i in range(aulen):
-                    inst.append({"name":name,"country":country}) ##LAST PART OF aff HAS THE COUNTRY
+                    author=authors[i] if authors else ""
+                    inst.append({"name":name,"countries":[country],"author":author}) ##LAST PART OF aff HAS THE COUNTRY
         return inst
 
     def parse_source(self,register):

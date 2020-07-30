@@ -4,6 +4,8 @@ from time import time
 from langid import classify
 from currency_converter import CurrencyConverter
 from fuzzywuzzy import fuzz,process
+import requests
+import urllib.parse
 
 from joblib import Parallel, delayed
 
@@ -40,20 +42,6 @@ class Kahi(KahiBase):
         self.colavdb=self.client["colav_better"]
 
         self.griddb=self.client["grid_colav"]
-
-        self.grid_names=[]
-        self.grid_ids=[]
-        for grid in self.griddb["stage"].find():
-            if "status" in grid.keys():
-                if  grid["status"]=="redirect":
-                    continue
-            if not "name" in grid.keys():
-                continue
-            raw_name=grid["name"].lower()
-            filtered_name=raw_name.replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-            name="".join(filtered_name.split(" ")).strip() #removing excess of spaces
-            self.grid_names.append(name)
-            self.grid_ids.append(grid["_id"])
 
         self.wosdb=self.client["wos"]
         self.wos_parser=WebOfScience.WebOfScience()
@@ -127,7 +115,7 @@ class Kahi(KahiBase):
                 lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
-                    titles_lang.append(lang)
+                    titles_lang.append(lang[0])
                     titles_idx.append(title.lower())
         if scielo:
             if scielo["title"]:
@@ -135,7 +123,7 @@ class Kahi(KahiBase):
                 lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
-                    titles_lang.append(lang)
+                    titles_lang.append(lang[0])
                     titles_idx.append(title.lower())
         if wos:
             if wos["title"]:
@@ -143,7 +131,7 @@ class Kahi(KahiBase):
                 lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
-                    titles_lang.append(lang)
+                    titles_lang.append(lang[0])
                     titles_idx.append(title.lower())
         if scopus:
             if scopus["title"]:
@@ -151,7 +139,7 @@ class Kahi(KahiBase):
                 lang=classify(title)
                 if not lang in titles_lang:
                     titles.append(title)
-                    titles_lang.append(lang)
+                    titles_lang.append(lang[0])
                     titles_idx.append(title.lower())
 
         for idx,title in enumerate(titles): 
@@ -427,34 +415,17 @@ class Kahi(KahiBase):
         authors=[]
         names=[]
         author_count=0
-        if lens:
-            if author_count!=0 and len(lens)!= author_count:
-                print("Number of authors does not match lens ",len(lens))
-                return(authors)
-            author_count=len(lens)
-        if wos:
-            if author_count!=0 and len(wos)!= author_count:
-                print("Number of authors does not match wos ",len(wos))
-                wos=None
-                print("wos is none")
-                #return(authors)
-            #author_count=len(wos)
-        if scielo:
-            if author_count!=0 and len(scielo)!= author_count:
-                print("Number of authors does not match scielo ",len(scielo))
-                scielo=None
-                print("scielo is none")
-                #return(authors)
-            #author_count=len(scielo)
         if scopus:
-            if author_count!=0 and len(scopus)!= author_count:
-                print("Number of authors does not match scopus ",len(scopus))
-                #return(authors)
-                scopus=None
-                print("scopus is none")
-            #author_count=len(scopus)
+            author_count=len(scopus)
+        if scielo:
+            author_count=len(scielo)
+        if wos:
+            author_count=len(wos)
+        if lens:
+            author_count=len(lens)
 
         updated=int(time())
+        print("Procesing ",author_count," authors")
         
         for i in range(author_count):
             entry={}
@@ -523,9 +494,24 @@ class Kahi(KahiBase):
                     entry["aliases"].append(entry["full_name"])
             
             
-            entry["updated"]=updated        
+            entry["updated"]=updated      
             authors.append(entry)
+            names.append(entry["full_name"])
+        if scholar:
+                for author in scholar:
+                    if "external_ids" in author:
+                        for i,name in enumerate(names):
+                            if fuzz.partial_ratio(name,author["full_name"])>0.8:
+                                authors[i]["external_ids"].extend(author["external_ids"])
+                                authors[i]["aliases"].append(author["full_name"])
+                                break
         return authors
+
+    def find_grid(self,token,url='https://api.ror.org/organizations?affiliation='):
+        query=urllib.parse.quote(token)
+        url='{}{}'.format(url,query)
+        result=requests.get(url)
+        return result.json()
 
     def join_institutions(self,scholar=None,scopus=None,scielo=None,wos=None,lens=None):
         """
@@ -568,230 +554,315 @@ class Kahi(KahiBase):
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
+                entry["author"]=""
+                entry["countries"]=[]
                 if len(lens[i])==0 or not lens[i]:
                     print("No institution to find")
-                elif lens[i][0]["grid_id"]:
-                    response=self.griddb["stage"].find_one({"id":lens[i][0]["grid_id"]})
+                elif lens[i]["grid_id"]:
+                    response=self.griddb["stage"].find_one({"id":lens[i]["grid_id"]})
                     entry["id"]=response["_id"]
-                    print("Found institution: ",lens[i][0]["name"])
+                    entry["author"]=lens[i]["author"]
+                    print("Found institution: ",lens[i]["name"])
                     institutions_found+=1
-                    aliases.append(lens[i][0]["name"])
-                    if wos:
-                        try:
-                            aliases.append(wos[i]["name"])
-                        except:
-                            pass
-                    if scielo:
-                        try:
-                            aliases.append(scielo[i]["name"])
-                        except:
-                            pass
+                    aliases.append(lens[i]["name"])
+                    #maybe put here the aliases from other raw sources
                     entry["aliases"]=list(set(aliases))
                     self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                elif lens[i][0]["grid_id"]=="" and lens[i][0]["name"]!="":
-                    name=lens[i][0]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",lens[i][0]["name"])
-                        institutions_found+=1
-                        aliases.append(lens[i][0]["name"])
-                        if wos:
+                elif lens[i]["grid_id"]=="" and lens[i]["name"]!="":
+                    result=self.find_grid(token=lens[i]["name"])
+                    if result["number_of_results"]!=0:
+                        if result["items"][0]["score"]>0.9:
+                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                            entry["id"]=db_institution["_id"]
+                            entry["author"]=lens[i]["author"]
+                            version={}
+                            if scopus:
+                                for institution in scopus:
+                                    #print("COMPARING ",institution["name"]," WITH ",lens[i]["name"])
+                                    #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
+                                    #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
+                                    #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
+                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    if ratio>90:
+                                        version=institution
+                                        break
+                                    elif ratio>60:
+                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        if ratio>90:
+                                            version=institution
+                                            break
+                                        elif ratio>60:
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            if ratio>90:
+                                                version=institution
+                                                break
+                            elif wos:
+                                for institution in wos:
+                                    #print("COMPARING ",institution["name"]," WITH ",lens[i]["name"])
+                                    #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
+                                    #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
+                                    #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
+                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    if ratio>90:
+                                        version=institution
+                                        break
+                                    elif ratio>60:
+                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        if ratio>90:
+                                            version=institution
+                                            break
+                                        elif ratio>60:
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            if ratio>90:
+                                                version=institution
+                                                break
+                            elif scielo:
+                                for institution in scielo:
+                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    if ratio>90:
+                                        version=institution
+                                        break
+                                    elif ratio>60:
+                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        if ratio>90:
+                                            version=institution
+                                            break
+                                        elif ratio>70:
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            if ratio>90:
+                                                version=institution
+                                                break
+                            print(version)
                             try:
-                                aliases.append(wos[i]["name"])
+                                entry["countries"]=version["countries"]
                             except:
-                                pass
-                        if scielo:
-                            try:
-                                aliases.append(scielo[i]["name"])
-                            except:
-                                pass
-                        entry["aliases"]=list(set(aliases))
-                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else:
-                        match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.partial_ratio)
-                        if rating>90:
-                            entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                            print("Found institution: ",lens[i][0]["name"])
+                                entry["countries"]=[]
+                            print("Found institution: ",db_institution["name"],", with token: ",lens[i]["name"])
                             institutions_found+=1
-                            aliases.append(lens[i][0]["name"])
-                            if wos:
-                                try:
-                                   aliases.append(wos[i]["name"])
-                                except:
-                                    pass
-                            if scielo:
-                                try:
-                                    aliases.append(scielo[i]["name"])
-                                except:
-                                    pass
-                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                elif wos: #if lens does not have a grid id
-                    name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-
-                        print("Found institution: ",wos[i]["name"])
-                        institutions_found+=1
-                        aliases.append(wos[i]["name"])
-                        if scielo:
-                            try:
-                                aliases.append(scielo[i]["name"])
-                            except:
-                                pass
-                        entry["aliases"]=list(set(aliases))
-                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else: #if rating is lower than 90 try a different scorer
-                        match,rating=process.extractOne(name,self.grid_names,
-                                                        scorer=fuzz.partial_ratio)
-                        if rating>90:
-                            entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                            print("Found institution: ",match)
-                            institutions_found+=1
-                            aliases.append(wos[i]["name"])
-                            if scielo:
-                                try:
-                                    aliases.append(scielo[i]["name"])
-                                except:
-                                    pass
+                            aliases.append(lens[i]["name"])
+                            #maybe put here aliases from other raw sources
                             entry["aliases"]=list(set(aliases))
                             self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                        else: #if the new scorer does not work continue to scielo
-                            if scielo:
-                                name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                                match,rating=process.extractOne(name,self.grid_names,
-                                                                scorer=fuzz.ratio)
-                                if rating>90:
-                                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                                    print("Found institution: ",scielo[i]["name"])
+                        elif wos:
+                            #check if some institution in wos is the same we are dealing with
+                            wos_version={"name":""}
+                            for institution in wos:
+                                #print("COMPARING ",institution["name"]," WITH ",lens[i]["name"])
+                                #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
+                                #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
+                                #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
+                                ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                if ratio>90:
+                                    wos_version=institution
+                                    break
+                                elif ratio>60:
+                                    ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                    if ratio>90:
+                                        wos_version=institution
+                                        break
+                                    elif ratio>70:
+                                        ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                        if ratio>90:
+                                            wos_version=institution
+                                            break
+                            try:
+                                result=self.find_grid(token=wos_version["name"])
+                            except:
+                                result={}
+                                result["number_of_results"]=1
+                                result["items"]=[{"score":0}]
+                            if result["number_of_results"]!=0:
+                                if result["items"][0]["score"]>0.9:
+                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                    entry["id"]=db_institution["_id"]
+                                    entry["author"]=wos_version["author"]
+                                    entry["countries"]=wos_version["countries"]
+                                    print("Found institution: ",db_institution["name"],", with token: ",wos_version["name"])
                                     institutions_found+=1
-                                    aliases.append(scielo[i]["name"])
-                                    entry["aliases"]=aliases
+                                    aliases.append(wos_version["name"])
+                                    #maybe put here some aliases from other raw sources
+                                    entry["aliases"]=list(set(aliases))
                                     self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                                else:
-                                    match,rating=process.extractOne(name,self.grid_names,
-                                                                    scorer=fuzz.partial_ratio)
-                                    if rating>90:
-                                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                                        print("Found institution: ",match)
-                                        institutions_found+=1
-                                        aliases.append(scielo[i]["name"])
-                                        entry["aliases"]=aliases
-                                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                elif scielo: #same as wos
-                    name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",scielo[i]["name"])
-                        institutions_found+=1
-                        aliases.append(scielo[i]["name"])
-                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else: #if rating is lower than 90 try a different scorer
-                        match,rating=process.extractOne(name,self.grid_names,
-                                                        scorer=fuzz.partial_ratio)
-                        if rating>90:
-                            entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                            print("Found institution: ",scielo[i]["name"])
-                            institutions_found+=1
-                            aliases.append(scielo[i]["name"])
-                            entry["aliases"]=list(set(aliases))
-                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                        else:
-                            entry["id"]=""
-                            entry["aliases"]=[]
-                            print("Institution not found")
-
-                #elif scopus
-                #SCOPUS NOT YET SUPPORTED
-                #ADD SCOPUS WHEN IT IS TIME TO ADD THE DOIS ONLY IN SCOPUS
+                                elif scielo:
+                                    #check if some institution in wos is the same we are dealing with
+                                    scielo_version={}
+                                    for institution in scielo:
+                                        ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                        if ratio>90:
+                                            scielo_version=institution
+                                            break
+                                        elif ratio>60:
+                                            ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                            if ratio>90:
+                                                scielo_version=institution
+                                                break
+                                            elif ratio>70:
+                                                ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                                if ratio>90:
+                                                    scielo_version=institution
+                                                    break
+                                    try:
+                                        result=self.find_grid(token=scielo_version["name"])
+                                    except:
+                                        result={}
+                                        result["number_of_results"]=1
+                                        result["items"]=[{"score":0}]
+                                    if result["number_of_results"]!=0:
+                                        if result["items"][0]["score"]>0.9:
+                                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                            entry["id"]=db_institution["_id"]
+                                            entry["author"]=scielo_version["author"]
+                                            entry["countries"]=scielo_version["countries"]
+                                            print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
+                                            institutions_found+=1
+                                            aliases.append(scielo_version["name"])
+                                            entry["aliases"]=list(set(aliases))
+                                            self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                                        elif scopus:
+                                            scopus_version={}
+                                            for institution in scopus:
+                                                ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                                if ratio>90:
+                                                    scopus_version=institution
+                                                    break
+                                                elif ratio>60:
+                                                    ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                                    if ratio>90:
+                                                        scopus_version=institution
+                                                        break
+                                                    elif ratio>70:
+                                                        ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                                        if ratio>90:
+                                                            scopus_version=institution
+                                                            break
+                                            try:
+                                                result=self.find_grid(token=scopus_version["name"])
+                                            except:
+                                                result={}
+                                                result["number_of_results"]=1
+                                                result["items"]=[{"score":0}]
+                                            if result["number_of_results"]!=0:
+                                                if result["items"][0]["score"]>0.9:
+                                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                                    entry["id"]=db_institution["_id"]
+                                                    entry["author"]=scopus_version["author"]
+                                                    print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                                    institutions_found+=1
+                                                    aliases.append(scopus_version["name"])
+                                                    entry["aliases"]=list(set(aliases))
+                                                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 else:
-                    entry["id"]=""
-                    entry["aliases"]=[]
                     print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
-                    return institutions
             print(len(institutions))
             return institutions
-
+        #END OF LENS PORTION
         elif wos: #if not lens at all
             institutions_count=len(wos)
             print("Searching: ",institutions_count," institutions.")
-            print(wos)
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
-                name=wos[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                match,rating=process.extractOne(name,self.grid_names,
-                                                scorer=fuzz.ratio)
-                if rating>90:
-                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                    print("Found institution: ",match)
-                    institutions_found+=1
-                    aliases.append(wos[i]["name"])
-                    if scielo:
-                        try:
-                            aliases.append(scielo[i]["name"])
-                        except:
-                            pass
-                    entry["aliases"]=list(set(aliases))
-                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                else: #if rating is lower than 90 try a different scorer
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.partial_ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",match)
+                entry["author"]=""
+                entry["countries"]=wos[i]["countries"]
+                result=self.find_grid(token=wos[i]["name"])
+                if result["number_of_results"]!=0:
+                    if result["items"][0]["score"]>0.9:
+                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                        entry["id"]=db_institution["_id"]
+                        entry["author"]=wos[i]["author"]
+                        print("Found institution: ",db_institution["name"],", with token: ",wos[i]["name"])
                         institutions_found+=1
                         aliases.append(wos[i]["name"])
-                        if scielo:
-                            try:
-                                aliases.append(scielo[i]["name"])
-                            except:
-                                pass
                         entry["aliases"]=list(set(aliases))
                         self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else: #if the new scorer does not work continue to scielo
-                        if scielo:
-                            name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                            match,rating=process.extractOne(name,self.grid_names,
-                                                            scorer=fuzz.ratio)
-                            if rating>90:
-                                entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                                print("Found institution: ",match)
+                    elif scielo:
+                        scielo_version={}
+                        for institution in scielo:
+                            ratio=fuzz.partial_ratio(institution["name"],wos[i]["name"])
+                            if ratio>90:
+                                scielo_version=institution
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.token_set_ratio(institution["name"],wos[i]["name"])
+                                if ratio>90:
+                                    scielo_version=institution
+                                    break
+                                elif ratio>70:
+                                    ratio=fuzz.partial_token_set_ratio(institution["name"],wos[i]["name"])
+                                    if ratio>90:
+                                        scielo_version=institution
+                                        break
+                        try:
+                            result=self.find_grid(token=scielo_version["name"])
+                        except:
+                            result={}
+                            result["number_of_results"]=1
+                            result["items"]=[{"score":0}]
+                        if result["number_of_results"]!=0:
+                            if result["items"][0]["score"]>0.9:
+                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                entry["id"]=db_institution["_id"]
+                                entry["author"]=scielo_version["author"]
+                                entry["countries"]=scielo_version["countries"]
+                                print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
                                 institutions_found+=1
-                                aliases.append(scielo[i]["name"])
-                                entry["aliases"]=aliases
-                            else:
-                                match,rating=process.extractOne(name,self.grid_names,
-                                                                scorer=fuzz.partial_ratio)
-                                if rating>90:
-                                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                                    print("Found institution: ",match)
-                                    institutions_found+=1
-                                    aliases.append(scielo[i]["name"])
-                                    entry["aliases"]=aliases
-                                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                                else:
-                                    entry["id"]=""
-                                    entry["aliases"]=""
-                                    print("Institution not found. Best match was: ",match,
-                                          " with rating: ",rating)
+                                aliases.append(scielo_version["name"])
+                                entry["aliases"]=list(set(aliases))
+                                self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                            elif scopus:
+                                scopus_version={}
+                                for institution in scopus:
+                                    ratio=fuzz.partial_ratio(institution["name"],wos[i]["name"])
+                                    if ratio>90:
+                                        scopus_version=institution
+                                        break
+                                    elif ratio>60:
+                                        ratio=fuzz.token_set_ratio(institution["name"],wos[i]["name"])
+                                        if ratio>90:
+                                            scopus_version=institution
+                                            break
+                                        elif ratio>70:
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"],wos[i]["name"])
+                                            if ratio>90:
+                                                scopus_version=institution
+                                                break
+                                try:
+                                    result=self.find_grid(token=scopus_version["name"])
+                                except:
+                                    result={}
+                                    result["number_of_results"]=1
+                                    result["items"]=[{"score":0}]
+                                if result["number_of_results"]!=0:
+                                    if result["items"][0]["score"]>0.9:
+                                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                        entry["id"]=db_institution["_id"]
+                                        entry["author"]=scopus_version["author"]
+                                        print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                        institutions_found+=1
+                                        aliases.append(scopus_version["name"])
+                                        entry["aliases"]=list(set(aliases))
+                                        self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                else:
+                    print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
-                    return institutions
             print(len(institutions))
             return institutions
+            #END OF WOS PORTION
+
         elif scielo:
             institutions_count=len(scielo)
             print("Searching: ",institutions_count," institutions.")
@@ -800,39 +871,51 @@ class Kahi(KahiBase):
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
-                name=scielo[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                match,rating=process.extractOne(name,self.grid_names,
-                                                scorer=fuzz.ratio)
-                if rating>90:
-                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                    print("Found institution: ",match)
-                    institutions_found+=1
-                    aliases.append(scielo[i]["name"])
-                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                else: #if rating is lower than 90 try a different scorer
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.partial_ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",match)
+                entry["author"]=""
+                entry["countries"]=scielo[i]["countries"]
+                result=self.find_grid(token=scielo[i]["name"])
+                if result["number_of_results"]!=0:
+                    if result["items"][0]["score"]>0.9:
+                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                        entry["id"]=db_institution["_id"]
+                        if scielo[i]["author"]:
+                            entry["author"]=scielo[i]["author"]
+                        else:
+                            if scopus:
+                                for institution in scopus:
+                                    if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>90:
+                                        entry["author"]=institution["author"]
+                        print("Found institution: ",db_institution["name"],", with token: ",scielo[i]["name"])
                         institutions_found+=1
                         aliases.append(scielo[i]["name"])
                         entry["aliases"]=list(set(aliases))
                         self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else:
-                        entry["id"]=""
-                        entry["aliases"]=""
-                        print("Institution not found. Best match was: ",match,
-                                " with rating: ",rating)
-                #elif scopus
-                #SCOPUS NOT YET SUPPORTED
-                #ADD SCOPUS WHEN IT IS TIME TO ADD THE DOIS ONLY IN SCOPUS
+                    elif scopus:
+                        scopus_version={}
+                        for institution in scopus:
+                            if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>90:
+                                scopus_version=institution
+                                break
+                        result=self.find_grid(token=scopus_version["name"])
+                        if result["number_of_results"]!=0:
+                            if result["items"][0]["score"]>0.9:
+                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                entry["id"]=db_institution["_id"]
+                                entry["author"]=scopus_version["author"]
+                                print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                institutions_found+=1
+                                aliases.append(scopus_version["name"])
+                                entry["aliases"]=list(set(aliases))
+                                self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
+                else:
+                    print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
-                    return institutions
-            print(len(institutions))
             return institutions
+            #END OF SCIELO PORTION
 
         elif scopus:
             institutions_count=len(scopus)
@@ -842,87 +925,82 @@ class Kahi(KahiBase):
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
-                name=scopus[i]["name"].lower().replace("university","").replace("of","").replace("and","").replace("the","").replace("college","").replace("institute","").replace("univ","").replace("inst","")
-                match,rating=process.extractOne(name,self.grid_names,
-                                                scorer=fuzz.ratio)
-                if rating>90:
-                    entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                    print("Found institution: ",scopus[i]["name"])
-                    institutions_found+=1
-                    aliases.append(scopus[i]["name"])
-                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                else: #if rating is lower than 90 try a different scorer
-                    match,rating=process.extractOne(name,self.grid_names,
-                                                    scorer=fuzz.partial_ratio)
-                    if rating>90:
-                        entry["id"]=self.grid_ids[self.grid_names.index(match)]
-                        print("Found institution: ",scopus[i]["name"])
+                entry["author"]=""
+                result=self.find_grid(token=scopus[i]["name"])
+                if result["number_of_results"]!=0:
+                    if result["items"][0]["score"]>0.9:
+                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                        entry["id"]=db_institution["_id"]
+                        entry["author"]=lens[i]["author"]
+                        print("Found institution: ",db_institution["name"],", with token: ",scopus[i]["name"])
                         institutions_found+=1
                         aliases.append(scopus[i]["name"])
                         entry["aliases"]=list(set(aliases))
                         self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
-                    else:
-                        entry["id"]=""
-                        entry["aliases"]=""
-                        print("Institution not found. Best match was: ",match,
-                                " with rating: ",rating)
+                else:
+                    print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
                     print("FOUND ALL INSTITUTIONS")
-                    return institutions
             print(len(institutions))
             return institutions
+            #END OF SCOPUS PORTION
+    
+    def join_authors_and_institutions(self,raw_authors,raw_institutions):
+        authors=self.join_authors(lens=raw_authors[0],
+                                   wos=raw_authors[1],
+                                   scielo=raw_authors[2],
+                                   scopus=raw_authors[3],
+                                   scholar=raw_authors[4])
+        institutions=self.join_institutions(lens=raw_institutions[0],
+                                            wos=raw_institutions[1],
+                                            scielo=raw_institutions[2],
+                                            scopus=raw_institutions[3],
+                                            scholar=raw_institutions[4])
+        #institution_authors=[inst["author"] for inst in institutions]
+
+        if self.verbose>4:
+            print("\n--------------------\n")
+            print(len(authors))
+            print(authors)
+            print("\n")
+            print(len(institutions))
+            print(institutions)
+            print("\n--------------------\n")
+
+        for author in authors:
+            author["affiliations"]=[]
+            for institution in institutions:
+                if institution["author"]=="":continue
+                if fuzz.token_set_ratio(author["full_name"],institution["author"])>90:
+                    inst=institution.copy()
+                    del(inst["aliases"])
+                    del(inst["author"])
+                    author["affiliations"].append(inst)
+        for institution in institutions: #searching empty institutions and append a false author
+            if "author" in institution.keys():
+                if institution["author"]=="":
+                    entry={
+                        "full_name":"Regina Falange",
+                        "first_names":"Regina",
+                        "last_names":"Falange",
+                        "initials":"R",
+                        "external_ids":[],
+                        "aliases":[],
+                        "corresponding":False,
+                        "corresponding_address":"",
+                        "corresponding_email":"",
+                        "updated":666,
+                        "affiliations":[institution]
+                    }
+                    authors.append(entry)        
 
 
-        #institutions_count=0
-        #if lens:
-        #    if institutions_count!=0 and len(lens)!= institutions_count:
-        #        print("Number of institutions does not match")
-        #        return(institutions)
-        #    institutions_count=len(lens)
-        #if wos:
-        #    if institutions_count!=0 and len(wos)!= institutions_count:
-        #        print("Number of institutions does not match")
-        #        return(institutions)
-        #    institutions_count=len(wos)
-        #if scielo:
-        #    if institutions_count!=0 and len(scielo)!= institutions_count:
-        #        print("Number of institutions does not match")
-        #        return(institutions)
-        #    institutions_count=len(scielo)
-        #if scopus:
-        #    if institutions_count!=0 and len(scopus)!= institutions_count:
-        #        print("Number of institutions does not match")
-        #        return(institutions)
-        #    institutions_count=len(scopus)
 
-        #for i in range(institutions_count):
-        #    entry={}
-        #    entry["aliases"]=[]
-        #    if wos and len(wos[i])>0:
-        #        entry["name"]=wos[i]["name"] if "name" in wos[i].keys() else ""
-        #        entry["country"]=wos[i]["country"] if "country" in wos[i].keys() else ""
-        #        if not entry["name"] in entry["aliases"] and entry["name"]!="":
-        #            entry["aliases"].append(entry["name"])
-        #    if scielo and len(scielo[i])>0:
-        #        entry["name"]=scielo[i]["name"] if "name" in scielo[i].keys() else ""
-        #        entry["country"]=scielo[i]["country"] if "country" in scielo[i].keys() else ""
-        #        if not entry["name"] in entry["aliases"] and entry["name"]!="":
-        #            entry["aliases"].append(entry["name"])
-        #    if lens and len(lens[i])>0:
-        #        entry["name"]=lens[i][0]["name"] if "name" in lens[i][0].keys() else ""
-        #        entry["grid_id"]=lens[i][0]["grid_id"] if "grid_id" in lens[i][0].keys() else ""
-        #        if not entry["name"] in entry["aliases"] and entry["name"]!="":
-        #            entry["aliases"].append(entry["name"])
-        #    if scopus and len(scopus[i])>0:
-        #        entry["name"]=scopus[i]["name"] if "name" in scopus[i].keys() else ""
-        #        if not entry["name"] in entry["aliases"] and entry["name"]!="":
-        #            entry["aliases"].append(entry["name"])
-            
-        #    entry["updated"]=updated
-        #    institutions.append(entry)
 
-        #return institutions
+        return authors
+
 
     def join_source(self,scholar=None,scopus=None,scielo=None,wos=None,lens=None):
         """
@@ -965,7 +1043,6 @@ class Kahi(KahiBase):
         #title
         if scopus:
             source["title"]=scopus["title"] if scopus["title"] else ""
-            print(source["title"])
         else:
             source["title"]=""
         if wos:
@@ -1185,6 +1262,7 @@ class Kahi(KahiBase):
             print("\n")
             print("**********\n* scholar *\n**********")
             print(scholardoc)
+            print(scholarau)
             print("\n")
             print("**********\n* oadoi *\n**********")
             print(oadoidoc)
@@ -1192,8 +1270,13 @@ class Kahi(KahiBase):
             print("\n--------------------\n")
 
         document=self.join_document(scholar=scholardoc,lens=lensdoc,scopus=scopusdoc,scielo=scielodoc,wos=wosdoc,oadoi=oadoidoc)
-        authors=self.join_authors(lens=lensau,scopus=scopusau,scielo=scieloau,wos=wosau)
-        institutions=self.join_institutions(lens=lensinst,scopus=scopusinst,scielo=scieloinst,wos=wosinst)
+        
+        #authors=self.join_authors(scholar=scholarau,lens=lensau,scopus=scopusau,scielo=scieloau,wos=wosau)
+        #institutions=self.join_institutions(lens=lensinst,scopus=scopusinst,scielo=scieloinst,wos=wosinst)
+        raw_authors=(lensau,wosau,scieloau,scopusau,scholarau)
+        raw_institutions=(lensinst,wosinst,scieloinst,scopusinst,scholarinst)
+        authors=self.join_authors_and_institutions(raw_authors,raw_institutions)
+
         source=self.join_source(lens=lenssource,scopus=scopussource,scielo=scielosource,wos=wossource)
 
         if self.verbose>3:
@@ -1201,23 +1284,13 @@ class Kahi(KahiBase):
             print("\n")
             print(authors)
             print("\n")
-            print(institutions)
-            print("\n")
             print(source)
 
             print("\n--------------------\n")
 
-        #Check if institution already in GRID db, update its aliases, update the document register
-        institutions_ids=[]
-        for inst in institutions:
-            if "id" in inst.keys():
-                institutions_ids.append(inst["id"])
-            else:
-                institutions_ids.append("")
             
         #Check if author already in the db, update the document register
         author_ids=[]
-        print("Searching authors: ",len(authors))
         for author in authors:
             authordb=None
             aliases=[]
@@ -1244,10 +1317,20 @@ class Kahi(KahiBase):
                 del(entry["corresponding"])
                 del(entry["corresponding_email"])
                 del(entry["corresponding_address"])
+                del(entry["affiliations"])
                 #print(entry)
                 if insert:
                     result=self.colavdb["authors"].insert_one(entry)
-                    author_ids.append(result.inserted_id)
+                    dbid=result.inserted_id
+                    author_ids.append(dbid)
+                else:
+                    dbid=""
+            author["id"]=dbid
+            del(author["aliases"])
+            del(author["external_ids"])
+            del(author["full_name"])
+            del(author["first_names"])
+            del(author["last_names"])
 
         #check if source already in the db, update the register
         sourcedb=None
@@ -1272,13 +1355,7 @@ class Kahi(KahiBase):
         #Assemble the document with source, author and affiliation ids
         #update affiliation information
         #update author information
-        document["authors"]=[]
-        for i in range(len(authors)):
-            entry={"id":author_ids[i],"affiliations":[{"id":institutions_ids[i],"branch":[]}]}
-            entry["corresponding"]=authors[i]["corresponding"]
-            entry["corresponding_email"]=authors[i]["corresponding_email"]
-            entry["corresponding_address"]=authors[i]["corresponding_address"]
-            document["authors"].append(entry)
+        document["authors"]=authors
         #update source information
         document["source"]=source_id
         if self.verbose>3:print(document)

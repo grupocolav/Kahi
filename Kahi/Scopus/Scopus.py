@@ -2,6 +2,7 @@ from time import time
 from datetime import datetime as dt
 import iso3166
 import iso639
+from fuzzywuzzy import fuzz,process
 
 class Scopus():
     def __init__(self):
@@ -230,17 +231,26 @@ class Scopus():
         institutions : list
             Information of the institutions in the CoLav standard format
         """
-        #They go in the same order as the authors
         inst=[]
-
+        country_list=list(iso3166.countries_by_name.keys())
         if "Authors with affiliations" in reg.keys():
             if reg["Authors with affiliations"] and reg["Authors with affiliations"]==reg["Authors with affiliations"]:
                 auwaf_list=reg["Authors with affiliations"].split("; ")
-                for idx in range(len(auwaf_list)):
-                    try:
-                        inst.append({"name":auwaf_list[i].split("., ")[1]})
-                    except:
-                        continue
+                
+                for i in range(len(auwaf_list)):
+                    auaf=auwaf_list[i].split("., ")
+                    fullname=auaf[1]
+                    countries=[]
+                    for name in fullname.split(", "):
+                        match,rating=process.extractOne(name,country_list,scorer=fuzz.ratio)
+                        if rating>90:
+                            try:
+                                countries.append(iso3166.countries_by_name.get(name.upper()).alpha2)
+                            except:
+                                countries.apppend("")
+                        elif "United Kingdom" in name:
+                            countries.append("GB")
+                    inst.append({"name":fullname,"author":auaf[0],"countries":countries})
 
         return inst
 

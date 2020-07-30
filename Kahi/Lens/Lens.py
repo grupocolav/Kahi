@@ -221,11 +221,11 @@ class Lens():
         inst=[]
         if "authors" in reg.keys():
             for author in reg["authors"]:
-                aff_list=[]
                 if "affiliations" in author.keys():
                     if author["affiliations"]:
                         for aff in author["affiliations"]:
                             entry={}
+                            entry["author"]=author["first_name"]+" "+author["last_name"]
                             if "grid" in aff.keys():
                                 entry["grid_id"]=aff["grid"]["id"]
                             else:
@@ -234,8 +234,7 @@ class Lens():
                                 entry["name"]=aff["name"]
                             else:
                                 entry["name"]=""
-                            aff_list.append(entry)
-                inst.append(aff_list)
+                            inst.append(entry)
         #if "" in register.keys(): inst[""]=register[""]
         return inst
 
