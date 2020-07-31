@@ -225,7 +225,9 @@ class Lens():
                     if author["affiliations"]:
                         for aff in author["affiliations"]:
                             entry={}
-                            entry["author"]=author["first_name"]+" "+author["last_name"]
+                            entry["author"]=""
+                            entry["author"]+=author["first_name"] if author["first_name"] else ""
+                            entry["author"]+=" "+author["last_name"] if author["last_name"] else ""
                             if "grid" in aff.keys():
                                 entry["grid_id"]=aff["grid"]["id"]
                             else:

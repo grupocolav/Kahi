@@ -413,61 +413,184 @@ class Kahi(KahiBase):
         """
         if self.verbose==5: print("JOINING AUTHORS")
         authors=[]
-        names=[]
         author_count=0
-        if scopus:
-            author_count=len(scopus)
-        if scielo:
-            author_count=len(scielo)
-        if wos:
-            author_count=len(wos)
+        updated=int(time())
         if lens:
             author_count=len(lens)
+            print("Procesing ",author_count," authors")
+            for i in range(author_count):
+                entry={}
+                entry["aliases"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=""
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
 
-        updated=int(time())
-        print("Procesing ",author_count," authors")
+                entry["full_name"]=lens[i]["full_name"] if "full_name" in lens[i].keys() else ""
+                entry["first_names"]=lens[i]["first_names"] if "first_names" in lens[i].keys() else ""
+                entry["last_names"]=lens[i]["last_names"] if "last_names" in lens[i].keys() else ""
+                entry["initials"]=lens[i]["initials"] if "initials" in lens[i].keys() else ""
+                if not entry["full_name"] in entry["aliases"]:
+                    entry["aliases"].append(entry["full_name"])
+
+                if wos:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in wos:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != ""and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != ""and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                if scielo:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in scielo:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != "" and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                if scopus:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in scopus:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != "" and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                        entry["external_ids"]=version["external_ids"] if "external_ids" in version.keys() else []
+                #end of scopus update
+                if scholar:
+                    version={}
+                    for author in scholar:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if version["external_ids"]:
+                            entry["external_ids"].extend(version["external_ids"])
+                        if not version["full_name"] in entry["full_name"]:
+                            entry["aliases"].append(version["full_name"])
+
+                entry["updated"]=updated      
+                authors.append(entry)
         
-        for i in range(author_count):
-            entry={}
-            entry["aliases"]=[]
-            entry["external_ids"]=[]
-            entry["corresponding"]=""
-            entry["corresponding_address"]=""
-            entry["corresponding_email"]=""
-            if scopus:
-                entry["full_name"]=scopus[i]["full_name"] if "full_name" in scopus[i].keys() else ""
-                entry["first_names"]=scopus[i]["first_names"] if "first_names" in scopus[i].keys() else ""
-                entry["last_names"]=scopus[i]["last_names"] if "last_names" in scopus[i].keys() else ""
-                entry["initials"]=scopus[i]["initials"] if "initials" in scopus[i].keys() else ""
-                if not entry["full_name"] in entry["aliases"]:
-                    entry["aliases"].append(entry["full_name"])
-                entry["external_ids"]=scopus[i]["external_ids"] if "external_ids" in scopus[i].keys() else []
-                if "corresponding" in scopus[i].keys():
-                    if scopus[i]["corresponding"] != "":
-                        entry["corresponding"]=scopus[i]["corresponding"]
-                if "corresponding_email" in scopus[i].keys():
-                    if scopus[i]["corresponding_email"] != "":
-                        entry["corresponding_email"]=scopus[i]["corresponding_email"]
-                if "corresponding_address" in scopus[i].keys():
-                    if scopus[i]["corresponding_address"] != "":
-                        entry["corresponding_address"]=scopus[i]["corresponding_address"]
-            if scielo:
-                entry["full_name"]=scielo[i]["full_name"] if "full_name" in scielo[i].keys() else ""
-                entry["first_names"]=scielo[i]["first_names"] if "first_names" in scielo[i].keys() else ""
-                entry["last_names"]=scielo[i]["last_names"] if "last_names" in scielo[i].keys() else ""
-                entry["initials"]=scielo[i]["initials"] if "initials" in scielo[i].keys() else ""
-                if not entry["full_name"] in entry["aliases"]:
-                    entry["aliases"].append(entry["full_name"])
-                if "corresponding" in scielo[i].keys():
-                    if scielo[i]["corresponding"] != "":
-                        entry["corresponding"]=scielo[i]["corresponding"]
-                if "corresponding_email" in scielo[i].keys():
-                    if scielo[i]["corresponding_email"] != "":
-                        entry["corresponding_email"]=scielo[i]["corresponding_email"]
-                if "corresponding_address" in scielo[i].keys():
-                    if scielo[i]["corresponding_address"] != "":
-                        entry["corresponding_address"]=scielo[i]["corresponding_address"]
-            if wos:
+        #End of lens section
+
+        elif wos:
+            author_count=len(wos)
+            print("Procesing ",author_count," authors")
+            for i in range(author_count):
+                entry={}
+                entry["aliases"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=""
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
+
                 entry["full_name"]=wos[i]["full_name"] if "full_name" in wos[i].keys() else ""
                 entry["first_names"]=wos[i]["first_names"] if "first_names" in wos[i].keys() else ""
                 entry["last_names"]=wos[i]["last_names"] if "last_names" in wos[i].keys() else ""
@@ -485,32 +608,277 @@ class Kahi(KahiBase):
                 if "corresponding_address" in wos[i].keys():
                     if wos[i]["corresponding_address"] != "":
                         entry["corresponding_address"]=wos[i]["corresponding_address"]
-            if lens:
-                entry["full_name"]=lens[i]["full_name"] if "full_name" in lens[i].keys() else ""
-                entry["first_names"]=lens[i]["first_names"] if "first_names" in lens[i].keys() else ""
-                entry["last_names"]=lens[i]["last_names"] if "last_names" in lens[i].keys() else ""
-                entry["initials"]=lens[i]["initials"] if "initials" in lens[i].keys() else ""
+
+                if scielo:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in scielo:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != "" and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                if scopus:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in scopus:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != "" and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                        entry["external_ids"]=version["external_ids"] if "external_ids" in version.keys() else []
+                #end of scopus update
+                if scholar:
+                    version={}
+                    for author in scholar:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if version["external_ids"]:
+                            entry["external_ids"].append(version["external_ids"])
+                        if not version["full_name"] in entry["full_name"]:
+                            entry["aliases"].extend(version["full_name"])
+
+                entry["updated"]=updated      
+                authors.append(entry)
+        
+        #End of wos section
+        
+        elif scielo:
+            author_count=len(scielo)
+            print("Procesing ",author_count," authors")
+            for i in range(author_count):
+                entry={}
+                entry["aliases"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=""
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
+
+                entry["full_name"]=scielo[i]["full_name"] if "full_name" in scielo[i].keys() else ""
+                entry["first_names"]=scielo[i]["first_names"] if "first_names" in scielo[i].keys() else ""
+                entry["last_names"]=scielo[i]["last_names"] if "last_names" in scielo[i].keys() else ""
+                entry["initials"]=scielo[i]["initials"] if "initials" in scielo[i].keys() else ""
                 if not entry["full_name"] in entry["aliases"]:
                     entry["aliases"].append(entry["full_name"])
-            
-            
-            entry["updated"]=updated      
-            authors.append(entry)
-            names.append(entry["full_name"])
-        if scholar:
-                for author in scholar:
-                    if "external_ids" in author:
-                        for i,name in enumerate(names):
-                            if fuzz.partial_ratio(name,author["full_name"])>0.8:
-                                authors[i]["external_ids"].extend(author["external_ids"])
-                                authors[i]["aliases"].append(author["full_name"])
+                if "corresponding" in wos[i].keys():
+                    if scielo[i]["corresponding"] != "":
+                        entry["corresponding"]=scielo[i]["corresponding"]
+                if "corresponding_email" in wos[i].keys():
+                    if scielo[i]["corresponding_email"] != "":
+                        entry["corresponding_email"]=scielo[i]["corresponding_email"]
+                else:
+                    entry["corresponding_email"]=""
+                if "corresponding_address" in scielo[i].keys():
+                    if scielo[i]["corresponding_address"] != "":
+                        entry["corresponding_address"]=scielo[i]["corresponding_address"]
+
+                if scopus:
+                    #search the right author since it is not guaranteed the are in the same order
+                    version={}
+                    for author in scopus:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
                                 break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if not entry["full_name"]:
+                            entry["full_name"]=version["full_name"]
+                        else:
+                            if not version["full_name"] in entry["aliases"]:
+                                entry["aliases"].append(version["full_name"])
+                        if not entry["first_names"]:
+                            entry["first_names"]=version["first_names"]
+                        if not entry["last_names"]:
+                            entry["last_name"]=version["last_names"]
+                        if not entry["initials"]:
+                            entry["initials"]=version["initials"]
+                        if "corresponding" in version.keys():
+                            if version["corresponding"] != "" and entry["corresponding"]=="":
+                                entry["corresponding"]=version["corresponding"]
+                        if "corresponding_email" in version.keys():
+                            if version["corresponding_email"] != "" and entry["corresponding_email"]=="":
+                                entry["corresponding_email"]=version["corresponding_email"]
+                        if "corresponding_address" in version.keys():
+                            if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
+                                entry["corresponding_address"]=version["corresponding_address"]
+                        entry["external_ids"]=version["external_ids"] if "external_ids" in version.keys() else []
+                #end of scopus update
+                if scholar:
+                    version={}
+                    for author in scholar:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if version["external_ids"]:
+                            entry["external_ids"].append(version["external_ids"])
+                        if not version["full_name"] in entry["full_name"]:
+                            entry["aliases"].extend(version["full_name"])
+
+                entry["updated"]=updated      
+                authors.append(entry)
+
+        #End of scielo section
+
+        elif scopus:
+            author_count=len(scopus)
+            print("Procesing ",author_count," authors")
+            for i in range(author_count):
+                entry={}
+                entry["aliases"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=""
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
+
+                entry["full_name"]=scopus[i]["full_name"] if "full_name" in scopus[i].keys() else ""
+                entry["first_names"]=scopus[i]["first_names"] if "first_names" in scopus[i].keys() else ""
+                entry["last_names"]=scopus[i]["last_names"] if "last_names" in scopus[i].keys() else ""
+                entry["initials"]=scopus[i]["initials"] if "initials" in scopus[i].keys() else ""
+                if not entry["full_name"] in entry["aliases"]:
+                    entry["aliases"].append(entry["full_name"])
+                if "corresponding" in wos[i].keys():
+                    if scopus[i]["corresponding"] != "":
+                        entry["corresponding"]=scopus[i]["corresponding"]
+                if "corresponding_email" in wos[i].keys():
+                    if scopus[i]["corresponding_email"] != "":
+                        entry["corresponding_email"]=scopus[i]["corresponding_email"]
+                else:
+                    entry["corresponding_email"]=""
+                if "corresponding_address" in scopus[i].keys():
+                    if scopus[i]["corresponding_address"] != "":
+                        entry["corresponding_address"]=scopus[i]["corresponding_address"]
+
+                if scholar:
+                    version={}
+                    for author in scholar:
+                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        if ratio>90:
+                            version=author
+                            break
+                        elif ratio>60:
+                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            if ratio>90:
+                                version=author
+                                break
+                            elif ratio>60:
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                if ratio>90:
+                                    version=author
+                                    break
+                    if version:
+                        if version["external_ids"]:
+                            entry["external_ids"].append(version["external_ids"])
+                        if not version["full_name"] in entry["full_name"]:
+                            entry["aliases"].extend(version["full_name"])
+
+                entry["updated"]=updated      
+                authors.append(entry)
+        
         return authors
+        
 
     def find_grid(self,token,url='https://api.ror.org/organizations?affiliation='):
+        print("SEARCHING FOR: ",token," IN ROR DB")
         query=urllib.parse.quote(token)
         url='{}{}'.format(url,query)
         result=requests.get(url)
+        print(result)
         return result.json()
 
     def join_institutions(self,scholar=None,scopus=None,scielo=None,wos=None,lens=None):
@@ -574,7 +942,7 @@ class Kahi(KahiBase):
                         if result["items"][0]["score"]>0.9:
                             gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                             db_institution=self.griddb["stage"].find_one({"id":gridid})
-                            entry["id"]=db_institution["_id"]
+                            entry["id"]=db_institution["_id"] if db_institution else ""
                             entry["author"]=lens[i]["author"]
                             version={}
                             if scopus:
@@ -638,7 +1006,10 @@ class Kahi(KahiBase):
                                 entry["countries"]=version["countries"]
                             except:
                                 entry["countries"]=[]
-                            print("Found institution: ",db_institution["name"],", with token: ",lens[i]["name"])
+                            if db_institution:
+                                print("Found institution: ",db_institution["name"],", with token: ",lens[i]["name"])
+                            else:
+                                print("Could not find institution: ",lens[i]["name"])
                             institutions_found+=1
                             aliases.append(lens[i]["name"])
                             #maybe put here aliases from other raw sources
@@ -1192,6 +1563,7 @@ class Kahi(KahiBase):
         #check if doi alredy in the db
         documentdb=None
         documentdb=self.colavdb["documents"].find_one({"external_ids.id":doi})
+        if self.verbose>2: print("Parsing DOI: ",doi)
         if documentdb:
             if self.verbose>3:
                 print("Document already in db. Skipping")
@@ -1303,6 +1675,7 @@ class Kahi(KahiBase):
                     break
             if authordb:
                 author_ids.append(authordb["_id"])
+                dbid=authordb["_id"]
                 #update alias of the author
                 
                 aliases=authordb["aliases"]

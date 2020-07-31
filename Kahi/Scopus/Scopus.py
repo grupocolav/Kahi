@@ -239,7 +239,10 @@ class Scopus():
                 
                 for i in range(len(auwaf_list)):
                     auaf=auwaf_list[i].split("., ")
-                    fullname=auaf[1]
+                    try:
+                        fullname=auaf[1]
+                    except:
+                        continue
                     countries=[]
                     for name in fullname.split(", "):
                         match,rating=process.extractOne(name,country_list,scorer=fuzz.ratio)
