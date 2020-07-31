@@ -1,6 +1,6 @@
 from Kahi import Kahi
 
-etl=Kahi.Kahi()
+etl=Kahi.Kahi(verbose=4)
 
 print('------------------------')
 print('Starting Kahi ETL lens dois process')

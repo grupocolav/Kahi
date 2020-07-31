@@ -734,10 +734,10 @@ class Kahi(KahiBase):
                 entry["initials"]=scielo[i]["initials"] if "initials" in scielo[i].keys() else ""
                 if not entry["full_name"] in entry["aliases"]:
                     entry["aliases"].append(entry["full_name"])
-                if "corresponding" in wos[i].keys():
+                if "corresponding" in scielo[i].keys():
                     if scielo[i]["corresponding"] != "":
                         entry["corresponding"]=scielo[i]["corresponding"]
-                if "corresponding_email" in wos[i].keys():
+                if "corresponding_email" in scielo[i].keys():
                     if scielo[i]["corresponding_email"] != "":
                         entry["corresponding_email"]=scielo[i]["corresponding_email"]
                 else:
@@ -832,10 +832,10 @@ class Kahi(KahiBase):
                 entry["initials"]=scopus[i]["initials"] if "initials" in scopus[i].keys() else ""
                 if not entry["full_name"] in entry["aliases"]:
                     entry["aliases"].append(entry["full_name"])
-                if "corresponding" in wos[i].keys():
+                if "corresponding" in scopus[i].keys():
                     if scopus[i]["corresponding"] != "":
                         entry["corresponding"]=scopus[i]["corresponding"]
-                if "corresponding_email" in wos[i].keys():
+                if "corresponding_email" in scopus[i].keys():
                     if scopus[i]["corresponding_email"] != "":
                         entry["corresponding_email"]=scopus[i]["corresponding_email"]
                 else:
@@ -940,9 +940,12 @@ class Kahi(KahiBase):
                     result=self.find_grid(token=lens[i]["name"])
                     if result["number_of_results"]!=0:
                         if result["items"][0]["score"]>0.9:
-                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                            db_institution=self.griddb["stage"].find_one({"id":gridid})
-                            entry["id"]=db_institution["_id"] if db_institution else ""
+                            try:
+                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                entry["id"]=db_institution["_id"]
+                            except:
+                                if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                             entry["author"]=lens[i]["author"]
                             version={}
                             if scopus:
@@ -1045,12 +1048,15 @@ class Kahi(KahiBase):
                                 result["items"]=[{"score":0}]
                             if result["number_of_results"]!=0:
                                 if result["items"][0]["score"]>0.9:
-                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                    entry["id"]=db_institution["_id"]
+                                    try:
+                                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                        entry["id"]=db_institution["_id"]
+                                    except:
+                                        if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                     entry["author"]=wos_version["author"]
                                     entry["countries"]=wos_version["countries"]
-                                    print("Found institution: ",db_institution["name"],", with token: ",wos_version["name"])
+                                    if db_institution:print("Found institution: ",db_institution["name"],", with token: ",wos_version["name"])
                                     institutions_found+=1
                                     aliases.append(wos_version["name"])
                                     #maybe put here some aliases from other raw sources
@@ -1082,12 +1088,15 @@ class Kahi(KahiBase):
                                         result["items"]=[{"score":0}]
                                     if result["number_of_results"]!=0:
                                         if result["items"][0]["score"]>0.9:
-                                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                            db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                            entry["id"]=db_institution["_id"]
+                                            try:
+                                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                                db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                                entry["id"]=db_institution["_id"]
+                                            except:
+                                                if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                             entry["author"]=scielo_version["author"]
                                             entry["countries"]=scielo_version["countries"]
-                                            print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
+                                            if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
                                             institutions_found+=1
                                             aliases.append(scielo_version["name"])
                                             entry["aliases"]=list(set(aliases))
@@ -1117,11 +1126,14 @@ class Kahi(KahiBase):
                                                 result["items"]=[{"score":0}]
                                             if result["number_of_results"]!=0:
                                                 if result["items"][0]["score"]>0.9:
-                                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                                    entry["id"]=db_institution["_id"]
+                                                    try:
+                                                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                                        entry["id"]=db_institution["_id"]
+                                                    except:
+                                                        if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                                     entry["author"]=scopus_version["author"]
-                                                    print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                                    if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
                                                     institutions_found+=1
                                                     aliases.append(scopus_version["name"])
                                                     entry["aliases"]=list(set(aliases))
@@ -1144,14 +1156,18 @@ class Kahi(KahiBase):
                 entry["aliases"]=[]
                 entry["author"]=""
                 entry["countries"]=wos[i]["countries"]
+                if not wos[i]["name"]: continue
                 result=self.find_grid(token=wos[i]["name"])
                 if result["number_of_results"]!=0:
                     if result["items"][0]["score"]>0.9:
-                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                        db_institution=self.griddb["stage"].find_one({"id":gridid})
-                        entry["id"]=db_institution["_id"]
+                        try:
+                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                            entry["id"]=db_institution["_id"]
+                        except:
+                            if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                         entry["author"]=wos[i]["author"]
-                        print("Found institution: ",db_institution["name"],", with token: ",wos[i]["name"])
+                        if db_institution:print("Found institution: ",db_institution["name"],", with token: ",wos[i]["name"])
                         institutions_found+=1
                         aliases.append(wos[i]["name"])
                         entry["aliases"]=list(set(aliases))
@@ -1181,12 +1197,15 @@ class Kahi(KahiBase):
                             result["items"]=[{"score":0}]
                         if result["number_of_results"]!=0:
                             if result["items"][0]["score"]>0.9:
-                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                entry["id"]=db_institution["_id"]
+                                try:
+                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                    entry["id"]=db_institution["_id"]
+                                except:
+                                    if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                 entry["author"]=scielo_version["author"]
                                 entry["countries"]=scielo_version["countries"]
-                                print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
+                                if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
                                 institutions_found+=1
                                 aliases.append(scielo_version["name"])
                                 entry["aliases"]=list(set(aliases))
@@ -1216,11 +1235,14 @@ class Kahi(KahiBase):
                                     result["items"]=[{"score":0}]
                                 if result["number_of_results"]!=0:
                                     if result["items"][0]["score"]>0.9:
-                                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                        db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                        entry["id"]=db_institution["_id"]
+                                        try:
+                                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                            entry["id"]=db_institution["_id"]
+                                        except:
+                                            if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                         entry["author"]=scopus_version["author"]
-                                        print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                        if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
                                         institutions_found+=1
                                         aliases.append(scopus_version["name"])
                                         entry["aliases"]=list(set(aliases))
@@ -1244,12 +1266,16 @@ class Kahi(KahiBase):
                 entry["aliases"]=[]
                 entry["author"]=""
                 entry["countries"]=scielo[i]["countries"]
+                if not scielo[i]["name"]: continue
                 result=self.find_grid(token=scielo[i]["name"])
                 if result["number_of_results"]!=0:
                     if result["items"][0]["score"]>0.9:
-                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                        db_institution=self.griddb["stage"].find_one({"id":gridid})
-                        entry["id"]=db_institution["_id"]
+                        try:
+                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                            entry["id"]=db_institution["_id"]
+                        except:
+                            if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                         if scielo[i]["author"]:
                             entry["author"]=scielo[i]["author"]
                         else:
@@ -1257,7 +1283,7 @@ class Kahi(KahiBase):
                                 for institution in scopus:
                                     if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>90:
                                         entry["author"]=institution["author"]
-                        print("Found institution: ",db_institution["name"],", with token: ",scielo[i]["name"])
+                        if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo[i]["name"])
                         institutions_found+=1
                         aliases.append(scielo[i]["name"])
                         entry["aliases"]=list(set(aliases))
@@ -1265,17 +1291,36 @@ class Kahi(KahiBase):
                     elif scopus:
                         scopus_version={}
                         for institution in scopus:
-                            if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>90:
+                            ratio=fuzz.partial_ratio(institution["name"],scielo[i]["name"])
+                            if ratio>90:
                                 scopus_version=institution
                                 break
-                        result=self.find_grid(token=scopus_version["name"])
+                            elif ratio>60:
+                                ratio=fuzz.token_set_ratio(institution["name"],scielo[i]["name"])
+                                if ratio>90:
+                                    scopus_version=institution
+                                    break
+                                elif ratio>70:
+                                    ratio=fuzz.partial_token_set_ratio(institution["name"],scielo[i]["name"])
+                                    if ratio>90:
+                                        scopus_version=institution
+                                        break
+                        try:
+                            result=self.find_grid(token=scopus_version["name"])
+                        except:
+                            result={}
+                            result["number_of_results"]=1
+                            result["items"]=[{"score":0}]
                         if result["number_of_results"]!=0:
                             if result["items"][0]["score"]>0.9:
-                                gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                                db_institution=self.griddb["stage"].find_one({"id":gridid})
-                                entry["id"]=db_institution["_id"]
+                                try:
+                                    gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                    db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                    entry["id"]=db_institution["_id"]
+                                except:
+                                    if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                 entry["author"]=scopus_version["author"]
-                                print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
                                 institutions_found+=1
                                 aliases.append(scopus_version["name"])
                                 entry["aliases"]=list(set(aliases))
@@ -1297,14 +1342,18 @@ class Kahi(KahiBase):
                 entry["id"]=""
                 entry["aliases"]=[]
                 entry["author"]=""
+                if not scopus[i]["name"]: continue
                 result=self.find_grid(token=scopus[i]["name"])
                 if result["number_of_results"]!=0:
                     if result["items"][0]["score"]>0.9:
-                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                        db_institution=self.griddb["stage"].find_one({"id":gridid})
-                        entry["id"]=db_institution["_id"]
-                        entry["author"]=lens[i]["author"]
-                        print("Found institution: ",db_institution["name"],", with token: ",scopus[i]["name"])
+                        try:
+                            gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            db_institution=self.griddb["stage"].find_one({"id":gridid})
+                            entry["id"]=db_institution["_id"]
+                        except:
+                            if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
+                        entry["author"]=scopus[i]["author"]
+                        if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scopus[i]["name"])
                         institutions_found+=1
                         aliases.append(scopus[i]["name"])
                         entry["aliases"]=list(set(aliases))

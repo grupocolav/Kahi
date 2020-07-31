@@ -250,7 +250,7 @@ class Scopus():
                             try:
                                 countries.append(iso3166.countries_by_name.get(name.upper()).alpha2)
                             except:
-                                countries.apppend("")
+                                countries.append("")
                         elif "United Kingdom" in name:
                             countries.append("GB")
                     inst.append({"name":fullname,"author":auaf[0],"countries":countries})

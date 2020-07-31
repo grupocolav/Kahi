@@ -309,8 +309,11 @@ class Scielo():
         inst=[]
         #if "" in register.keys(): inst[""]=register[""]
         if "C1" in register.keys():
-           #print(register["C1"].rstrip().split("\n"))
-            for auwaf in register["C1"].rstrip().split("\n"):
+            #print(register["C1"].rstrip().split("\n"))
+            C1=register["C1"].rstrip().replace(".","")
+            if C1[:1]=="\n":
+                C1=C1[1:]
+            for auwaf in C1.split("\n"):
                 aulen=len(auwaf.split(";"))
                 if aulen==1:
                     auaff=auwaf.split("] ")
