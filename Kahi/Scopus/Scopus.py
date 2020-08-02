@@ -184,7 +184,7 @@ class Scopus():
         corresponding_email=""
         if "Correspondence Address" in reg.keys():
             if reg["Correspondence Address"] and reg["Correspondence Address"]==reg["Correspondence Address"]:
-                corresponding_list=reg["Correspondence Address"].split(";")
+                corresponding_list=reg["Correspondence Address"].split("; ")
                 if len(corresponding_list)>0: corresponding_author=corresponding_list[0]
                 if len(corresponding_list)>1: corresponding_address=corresponding_list[1]
                 if len(corresponding_list)>2: corresponding_email=corresponding_list[2]
@@ -198,7 +198,10 @@ class Scopus():
                         "last_names":author.split(" ")[0],
                         "initials":author.split(" ")[1].replace(".",""),
                         "aliases":[],
-                        "national_id":""}
+                        "national_id":"",
+                        "corresponding":"",
+                        "corresponding_address":"",
+                        "corresponding_email":""}
                     except:
                         continue
                     #print("\n")
@@ -206,10 +209,23 @@ class Scopus():
                     #print("\n")
                     if corresponding_author:
                         print(author,corresponding_author)
-                        if fuzz.partial_ratio(author,corresponding_author)>90:
+                        rate=fuzz.partial_ratio(author,corresponding_author)
+                        if rate>90:
                             entry["corresponding"]=True
                             entry["corresponding_address"]=corresponding_address
                             entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                        elif rate>50:
+                            rate=fuzz.token_set_ratio(author,corresponding_author)
+                            if rate>90:
+                                entry["corresponding"]=True
+                                entry["corresponding_address"]=corresponding_address
+                                entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                            elif rate>50:
+                                rate=fuzz.partial_token_set_ratio(author,corresponding_author)
+                                if rate>90:
+                                    entry["corresponding"]=True
+                                    entry["corresponding_address"]=corresponding_address
+                                    entry["corresponding_email"]=corresponding_email.replace("email: ","")
                     if ids:
                         try:
                             entry["external_ids"]=[{"source":"scopus","value":ids[idx]}]
