@@ -445,17 +445,17 @@ class Kahi(KahiBase):
                         #print("partial ratio: ",fuzz.partial_ratio(author["full_name"],lens[i]["full_name"]))
                         #print("token set ratio: ",fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"]))
                         #print("partial token set ratio: ",fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"]))
-                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -487,17 +487,17 @@ class Kahi(KahiBase):
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scielo:
-                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -530,17 +530,17 @@ class Kahi(KahiBase):
                         print("partial ratio: ",fuzz.partial_ratio(author["full_name"],lens[i]["full_name"]))
                         print("token set ratio: ",fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"]))
                         print("partial token set ratio: ",fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"]))
-                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -574,17 +574,17 @@ class Kahi(KahiBase):
                 if scholar:
                     version={}
                     for author in scholar:
-                        ratio=fuzz.partial_ratio(author["full_name"],lens[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                             if ratio>=90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -632,17 +632,17 @@ class Kahi(KahiBase):
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scielo:
-                        ratio=fuzz.partial_ratio(author["full_name"],wos[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],wos[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],wos[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -671,17 +671,17 @@ class Kahi(KahiBase):
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scopus:
-                        ratio=fuzz.partial_ratio(author["full_name"],wos[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],wos[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],wos[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -711,17 +711,17 @@ class Kahi(KahiBase):
                 if scholar:
                     version={}
                     for author in scholar:
-                        ratio=fuzz.partial_ratio(author["full_name"],wos[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],wos[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],wos[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -769,17 +769,17 @@ class Kahi(KahiBase):
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scopus:
-                        ratio=fuzz.partial_ratio(author["full_name"],scielo[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],scielo[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],scielo[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -809,17 +809,17 @@ class Kahi(KahiBase):
                 if scholar:
                     version={}
                     for author in scholar:
-                        ratio=fuzz.partial_ratio(author["full_name"],scielo[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],scielo[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],scielo[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -866,17 +866,17 @@ class Kahi(KahiBase):
                 if scholar:
                     version={}
                     for author in scholar:
-                        ratio=fuzz.partial_ratio(author["full_name"],scopus[i]["full_name"])
+                        ratio=fuzz.partial_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
                         if ratio>90:
                             version=author
                             break
                         elif ratio>=50:
-                            ratio=fuzz.token_set_ratio(author["full_name"],scopus[i]["full_name"])
+                            ratio=fuzz.token_set_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
                             if ratio>90:
                                 version=author
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.partial_token_set_ratio(author["full_name"],scopus[i]["full_name"])
+                                ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
                                 if ratio>90:
                                     version=author
                                     break
@@ -973,33 +973,33 @@ class Kahi(KahiBase):
                                     #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
                                     #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                     #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
-                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                     if ratio>90:
                                         version=institution
                                         break
                                     else:
-                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                         if ratio>90:
                                             version=institution
                                             break
                                         else:
-                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                             if ratio>90:
                                                 version=institution
                                                 break
                             elif scielo:
                                 for institution in scielo:
-                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                     if ratio>90:
                                         version=institution
                                         break
                                     else:
-                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                         if ratio>90:
                                             version=institution
                                             break
                                         else:
-                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                             if ratio>90:
                                                 version=institution
                                                 break
@@ -1009,17 +1009,17 @@ class Kahi(KahiBase):
                                     #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
                                     #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                     #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
-                                    ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                    ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                     if ratio>90:
                                         version=institution
                                         break
                                     else:
-                                        ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                        ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                         if ratio>90:
                                             version=institution
                                             break
                                         else:
-                                            ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                             if ratio>90:
                                                 version=institution
                                                 break
@@ -1046,17 +1046,17 @@ class Kahi(KahiBase):
                                 #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
                                 #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                 #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
-                                ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                 if ratio>90:
                                     wos_version=institution
                                     break
                                 elif ratio>=50:
-                                    ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                    ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                     if ratio>90:
                                         wos_version=institution
                                         break
                                     elif ratio>=50:
-                                        ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                        ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                         if ratio>90:
                                             wos_version=institution
                                             break
@@ -1086,17 +1086,17 @@ class Kahi(KahiBase):
                                     #check if some institution in wos is the same we are dealing with
                                     scielo_version={}
                                     for institution in scielo:
-                                        ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                        ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                         if ratio>90:
                                             scielo_version=institution
                                             break
                                         elif ratio>=50:
-                                            ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                            ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                             if ratio>90:
                                                 scielo_version=institution
                                                 break
                                             elif ratio>=50:
-                                                ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                                ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                                 if ratio>90:
                                                     scielo_version=institution
                                                     break
@@ -1124,17 +1124,17 @@ class Kahi(KahiBase):
                                         elif scopus:
                                             scopus_version={}
                                             for institution in scopus:
-                                                ratio=fuzz.partial_ratio(institution["name"],lens[i]["name"])
+                                                ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                                 if ratio>90:
                                                     scopus_version=institution
                                                     break
                                                 elif ratio>=50:
-                                                    ratio=fuzz.token_set_ratio(institution["name"],lens[i]["name"])
+                                                    ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                                     if ratio>90:
                                                         scopus_version=institution
                                                         break
                                                     elif ratio>=50:
-                                                        ratio=fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"])
+                                                        ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
                                                         if ratio>90:
                                                             scopus_version=institution
                                                             break
@@ -1196,17 +1196,17 @@ class Kahi(KahiBase):
                     elif scielo:
                         scielo_version={}
                         for institution in scielo:
-                            ratio=fuzz.partial_ratio(institution["name"],wos[i]["name"])
+                            ratio=fuzz.partial_ratio(institution["name"].lower(),wos[i]["name"].lower())
                             if ratio>90:
                                 scielo_version=institution
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.token_set_ratio(institution["name"],wos[i]["name"])
+                                ratio=fuzz.token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
                                 if ratio>90:
                                     scielo_version=institution
                                     break
                                 elif ratio>=50:
-                                    ratio=fuzz.partial_token_set_ratio(institution["name"],wos[i]["name"])
+                                    ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
                                     if ratio>90:
                                         scielo_version=institution
                                         break
@@ -1234,17 +1234,17 @@ class Kahi(KahiBase):
                             elif scopus:
                                 scopus_version={}
                                 for institution in scopus:
-                                    ratio=fuzz.partial_ratio(institution["name"],wos[i]["name"])
+                                    ratio=fuzz.partial_ratio(institution["name"].lower(),wos[i]["name"].lower())
                                     if ratio>90:
                                         scopus_version=institution
                                         break
                                     elif ratio>=50:
-                                        ratio=fuzz.token_set_ratio(institution["name"],wos[i]["name"])
+                                        ratio=fuzz.token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
                                         if ratio>90:
                                             scopus_version=institution
                                             break
                                         elif ratio>=50:
-                                            ratio=fuzz.partial_token_set_ratio(institution["name"],wos[i]["name"])
+                                            ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
                                             if ratio>90:
                                                 scopus_version=institution
                                                 break
@@ -1312,17 +1312,17 @@ class Kahi(KahiBase):
                     elif scopus:
                         scopus_version={}
                         for institution in scopus:
-                            ratio=fuzz.partial_ratio(institution["name"],scielo[i]["name"])
+                            ratio=fuzz.partial_ratio(institution["name"].lower(),scielo[i]["name"].lower())
                             if ratio>90:
                                 scopus_version=institution
                                 break
                             elif ratio>=50:
-                                ratio=fuzz.token_set_ratio(institution["name"],scielo[i]["name"])
+                                ratio=fuzz.token_set_ratio(institution["name"].lower(),scielo[i]["name"].lower())
                                 if ratio>90:
                                     scopus_version=institution
                                     break
                                 elif ratio>=50:
-                                    ratio=fuzz.partial_token_set_ratio(institution["name"],scielo[i]["name"])
+                                    ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),scielo[i]["name"].lower())
                                     if ratio>90:
                                         scopus_version=institution
                                         break
