@@ -286,7 +286,7 @@ class WebOfScience():
                             else:
                                 entry["corresponding_email"]=""
                         else:
-                            entry["corresponding"]=False
+                            entry["corresponding"]=""
                             entry["corresponding_email"]=""
                     authors.append(entry)
         return authors
