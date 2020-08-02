@@ -83,7 +83,7 @@ class Lens():
                 data["languages"]=""
         else:
             data["languages"]=""
-        if "year__published" in reg.keys():
+        if "year_published" in reg.keys():
             if reg["year_published"] and reg["year_published"]==reg["year_published"]:
                 data["year_published"]=reg["year_published"]
             else:

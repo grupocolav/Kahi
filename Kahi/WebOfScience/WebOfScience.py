@@ -277,7 +277,7 @@ class WebOfScience():
                     #Checking if is corresponding author
                     if corresponding_last_name:
                         if corresponding_last_name in last_names:
-                            entry["correspondig"]=True
+                            entry["corresponding"]=True
                             if "EM" in register.keys():
                                 if register["EM"] and register["EM"]==register["EM"]:
                                     entry["corresponding_email"]=register["EM"].rstrip()
@@ -286,7 +286,7 @@ class WebOfScience():
                             else:
                                 entry["corresponding_email"]=""
                         else:
-                            entry["correspondig"]=False
+                            entry["corresponding"]=False
                             entry["corresponding_email"]=""
                     authors.append(entry)
         return authors

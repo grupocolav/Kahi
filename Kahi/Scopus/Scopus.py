@@ -185,7 +185,6 @@ class Scopus():
         if "Correspondence Address" in reg.keys():
             if reg["Correspondence Address"] and reg["Correspondence Address"]==reg["Correspondence Address"]:
                 corresponding_list=reg["Correspondence Address"].split(";")
-                #print(corresponding_list)
                 if len(corresponding_list)>0: corresponding_author=corresponding_list[0]
                 if len(corresponding_list)>1: corresponding_address=corresponding_list[1]
                 if len(corresponding_list)>2: corresponding_email=corresponding_list[2]
@@ -195,15 +194,19 @@ class Scopus():
                 for idx,author in enumerate(reg["Authors"].split(", ")):
                     try:
                         entry={"full_name":author,
+                        "first_names":"",
                         "last_names":author.split(" ")[0],
-                        "initials":author.split(" ")[1].replace(".","")}
+                        "initials":author.split(" ")[1].replace(".",""),
+                        "aliases":[],
+                        "national_id":""}
                     except:
                         continue
                     #print("\n")
                     #print(author,corresponding_author)
                     #print("\n")
                     if corresponding_author:
-                        if author==corresponding_author.replace(",",""):
+                        print(author,corresponding_author)
+                        if fuzz.partial_ratio(author,corresponding_author)>90:
                             entry["corresponding"]=True
                             entry["corresponding_address"]=corresponding_address
                             entry["corresponding_email"]=corresponding_email.replace("email: ","")
@@ -239,10 +242,20 @@ class Scopus():
                 
                 for i in range(len(auwaf_list)):
                     auaf=auwaf_list[i].split("., ")
-                    try:
-                        fullname=auaf[1]
-                    except:
-                        continue
+                    if len(auaf)==1:
+                        auaf=auwaf_list[i].split(".")
+                        try:
+                            fullname=auaf[1]
+                        except:
+                            try:
+                                fullname=auaf[0]
+                            except:
+                                continue
+                    else:
+                        try:
+                            fullname=auaf[1]
+                        except:
+                            continue
                     countries=[]
                     for name in fullname.split(", "):
                         match,rating=process.extractOne(name,country_list,scorer=fuzz.ratio)
