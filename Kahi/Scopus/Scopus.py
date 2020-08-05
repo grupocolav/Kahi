@@ -3,6 +3,8 @@ from datetime import datetime as dt
 import iso3166
 import iso639
 from fuzzywuzzy import fuzz,process
+from re import split,UNICODE
+from geotext import GeoText
 
 class Scopus():
     def __init__(self):
@@ -192,6 +194,7 @@ class Scopus():
             if reg["Authors"] and reg["Authors"]==reg["Authors"]:
                 if "Author(s) ID" in reg.keys(): ids=reg["Author(s) ID"].split(";")
                 for idx,author in enumerate(reg["Authors"].split(", ")):
+                    no_corresponding=True
                     try:
                         entry={"full_name":author,
                         "first_names":"",
@@ -214,24 +217,43 @@ class Scopus():
                             entry["corresponding"]=True
                             entry["corresponding_address"]=corresponding_address
                             entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                            no_corresponding=False
                         elif rate>50:
                             rate=fuzz.token_set_ratio(author,corresponding_author)
                             if rate>90:
                                 entry["corresponding"]=True
                                 entry["corresponding_address"]=corresponding_address
                                 entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                                no_corresponding=False
                             elif rate>50:
                                 rate=fuzz.partial_token_set_ratio(author,corresponding_author)
                                 if rate>90:
                                     entry["corresponding"]=True
                                     entry["corresponding_address"]=corresponding_address
                                     entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                                    no_corresponding=False
                     if ids:
                         try:
                             entry["external_ids"]=[{"source":"scopus","value":ids[idx]}]
                         except:
                             continue
                     authors.append(entry)
+                if len(authors)==1:
+                    authors[0]["corresponding"]=True
+                    no_corresponding=False
+                if no_corresponding:
+                    entry={
+                        "full_name":corresponding_author,
+                        "first_names":"",
+                        "last_names":"",
+                        "initials":"",
+                        "external_ids":[],
+                        "aliases":[],
+                        "corresponding":True,
+                        "corresponding_address":corresponding_address,
+                        "corresponding_email":corresponding_email,
+                        "updated":666,
+                    }
 
 
         return authors
@@ -251,14 +273,28 @@ class Scopus():
             Information of the institutions in the CoLav standard format
         """
         inst=[]
-        country_list=list(iso3166.countries_by_name.keys())
         if "Authors with affiliations" in reg.keys():
             if reg["Authors with affiliations"] and reg["Authors with affiliations"]==reg["Authors with affiliations"]:
                 auwaf_list=reg["Authors with affiliations"].split("; ")
-                
                 for i in range(len(auwaf_list)):
-                    auaf=auwaf_list[i].split("., ")
-                    if len(auaf)==1:
+                    auaf=split('(^[\w\-]+,\s+[\w\s\.]+,\s)',auwaf_list[i],UNICODE)
+                    author=auaf[1]
+                    affiliations=auaf[-1]
+                    countries=GeoText(affiliations).countries
+                    for country in countries[:-1]:
+                        country_affiliation_list=affiliations.split(country+', ')
+                        if country=="United Kingdom":
+                            country_alpha2="GB"
+                        else:
+                            country_alpha2=country=iso3166.countries_by_name.get(country.upper()).alpha2
+                        inst.append({"name":country_affiliation_list[0]+country,"author":author,"countries":country_alpha2})
+                        affiliations=country_affiliation_list[-1] #what is left
+                    if countries[-1]=="United Kingdom":
+                        country_alpha2="GB"
+                    else:
+                        country_alpha2=country=iso3166.countries_by_name.get(countries[-1].upper()).alpha2
+                    inst.append({"name":affiliations,"author":author,"countries":country_alpha2})
+                    """if len(auaf)==1:
                         auaf=auwaf_list[i].split(".")
                         try:
                             fullname=auaf[1]
@@ -282,7 +318,7 @@ class Scopus():
                                 countries.append("")
                         elif "United Kingdom" in name:
                             countries.append("GB")
-                    inst.append({"name":fullname,"author":auaf[0],"countries":countries})
+                    inst.append({"name":fullname,"author":affiliation,"countries":countries})"""
 
         return inst
 

@@ -419,6 +419,10 @@ class Kahi(KahiBase):
         authors=[]
         author_count=0
         updated=int(time())
+
+        #Create first a list of unique institutions from all the available sources
+        #Then complete the information from that institution from each source
+
         if lens:
             author_count=len(lens)
             print("Procesing ",author_count," authors")
@@ -446,17 +450,17 @@ class Kahi(KahiBase):
                         #print("token set ratio: ",fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"]))
                         #print("partial token set ratio: ",fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"]))
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -482,23 +486,23 @@ class Kahi(KahiBase):
                         if "corresponding_address" in version.keys():
                             if version["corresponding_address"] != "" and entry["corresponding_address"]=="":
                                 entry["corresponding_address"]=version["corresponding_address"]
-                        print(entry)
+                        #print(entry)
                 if scielo:
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scielo:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -526,29 +530,29 @@ class Kahi(KahiBase):
                     #search the right author since it is not guaranteed the are in the same order
                     version={}
                     for author in scopus:
-                        print("COMPARING ",author["full_name"]," WITH ",lens[i]["full_name"])
-                        print("partial ratio: ",fuzz.partial_ratio(author["full_name"],lens[i]["full_name"]))
-                        print("token set ratio: ",fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"]))
-                        print("partial token set ratio: ",fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"]))
+                        #print("COMPARING ",author["full_name"]," WITH ",lens[i]["full_name"])
+                        #print("partial ratio: ",fuzz.partial_ratio(author["full_name"],lens[i]["full_name"]))
+                        #print("token set ratio: ",fuzz.token_set_ratio(author["full_name"],lens[i]["full_name"]))
+                        #print("partial token set ratio: ",fuzz.partial_token_set_ratio(author["full_name"],lens[i]["full_name"]))
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                                 else:
                                     print("Could not find associated author in scopus: ",lens[i]["full_name"])
                     if version:
-                        print("VERSION SCOPUS")
-                        print(version)
+                        #print("VERSION SCOPUS")
+                        #print(version)
                         if not entry["full_name"]:
                             entry["full_name"]=version["full_name"]
                         else:
@@ -575,7 +579,7 @@ class Kahi(KahiBase):
                     version={}
                     for author in scholar:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
@@ -585,7 +589,7 @@ class Kahi(KahiBase):
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),lens[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -633,17 +637,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scielo:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -672,17 +676,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scopus:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -712,17 +716,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scholar:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),wos[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -770,17 +774,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scopus:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -810,17 +814,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scholar:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scielo[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -867,17 +871,17 @@ class Kahi(KahiBase):
                     version={}
                     for author in scholar:
                         ratio=fuzz.partial_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
-                        if ratio>90:
+                        if ratio>=80:
                             version=author
                             break
                         elif ratio>=50:
                             ratio=fuzz.token_set_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 version=author
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.partial_token_set_ratio(author["full_name"].lower(),scopus[i]["full_name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     version=author
                                     break
                     if version:
@@ -897,7 +901,6 @@ class Kahi(KahiBase):
         query=urllib.parse.quote(token)
         url='{}{}'.format(url,query)
         result=requests.get(url)
-        print(result)
         return result.json()
 
     def join_institutions(self,scholar=None,scopus=None,scielo=None,wos=None,lens=None):
@@ -933,39 +936,48 @@ class Kahi(KahiBase):
 
         institutions_count=0
         institutions_found=0
+
+        #Create first a list of unique institutions from all the available sources
+        #Then complete the information from that institution from each source
+
         if lens:
             institutions_count=len(lens)
-            print("Searching: ",institutions_count," institutions.")
+            print("Searching: ",institutions_count," institutions in lens.")
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
-                entry["author"]=""
-                entry["countries"]=[]
+                entry["author"]=lens[i]["author"]
+                entry["country"]=""
+                entry["name"]=lens[i]["name"]
                 if len(lens[i])==0 or not lens[i]:
                     print("No institution to find")
                 elif lens[i]["grid_id"]:
                     response=self.griddb["stage"].find_one({"id":lens[i]["grid_id"]})
                     entry["id"]=response["_id"]
-                    entry["author"]=lens[i]["author"]
-                    print("Found institution: ",lens[i]["name"])
+                    try:
+                        entry["country"]=response["addresses"][0]["country_code"]
+                    except Exception as e:
+                        print(e)
+                    print("Found grid id in lens: ",lens[i]["name"])
                     institutions_found+=1
                     aliases.append(lens[i]["name"])
                     #maybe put here the aliases from other raw sources
                     entry["aliases"]=list(set(aliases))
                     self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}})
                 elif lens[i]["grid_id"]=="" and lens[i]["name"]!="":
+                    print("searching by name")
                     result=self.find_grid(token=lens[i]["name"])
                     if result["number_of_results"]!=0:
-                        if result["items"][0]["score"]>0.9:
+                        if result["items"][0]["score"]>0.8:
+                            if self.verbose==5: print("Found grid id with lens name")
                             try:
                                 gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                 db_institution=self.griddb["stage"].find_one({"id":gridid})
                                 entry["id"]=db_institution["_id"]
                             except:
                                 if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
-                            entry["author"]=lens[i]["author"]
                             version={}
                             if wos:
                                 for institution in wos:
@@ -974,33 +986,33 @@ class Kahi(KahiBase):
                                     #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                     #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
                                     ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         version=institution
                                         break
-                                    else:
+                                    elif ratio>=50:
                                         ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             version=institution
                                             break
-                                        else:
+                                        elif ratio>=50:
                                             ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                            if ratio>90:
+                                            if ratio>=80:
                                                 version=institution
                                                 break
                             elif scielo:
                                 for institution in scielo:
                                     ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         version=institution
                                         break
-                                    else:
+                                    elif ratio>=50:
                                         ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             version=institution
                                             break
-                                        else:
+                                        elif ratio>=50:
                                             ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                            if ratio>90:
+                                            if ratio>=80:
                                                 version=institution
                                                 break
                             elif scopus:
@@ -1010,25 +1022,25 @@ class Kahi(KahiBase):
                                     #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                     #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
                                     ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         version=institution
                                         break
-                                    else:
+                                    elif ratio>=50:
                                         ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             version=institution
                                             break
-                                        else:
+                                        elif ratio>=50:
                                             ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                            if ratio>90:
+                                            if ratio>=80:
                                                 version=institution
                                                 break
                             
                             print(version)
                             try:
-                                entry["countries"]=version["countries"]
+                                entry["country"]=version["country"]
                             except:
-                                entry["countries"]=[]
+                                entry["country"]=""
                             if db_institution:
                                if "name" in db_institution.keys(): print("Found institution: ",db_institution["name"],", with token: ",lens[i]["name"])
                             else:
@@ -1047,17 +1059,17 @@ class Kahi(KahiBase):
                                 #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
                                 #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
                                 ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     wos_version=institution
                                     break
                                 elif ratio>=50:
                                     ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         wos_version=institution
                                         break
                                     elif ratio>=50:
                                         ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             wos_version=institution
                                             break
                             try:
@@ -1067,7 +1079,7 @@ class Kahi(KahiBase):
                                 result["number_of_results"]=1
                                 result["items"]=[{"score":0}]
                             if result["number_of_results"]!=0:
-                                if result["items"][0]["score"]>0.9:
+                                if result["items"][0]["score"]>0.8:
                                     try:
                                         gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                         db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1075,7 +1087,7 @@ class Kahi(KahiBase):
                                     except:
                                         if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                     entry["author"]=wos_version["author"]
-                                    entry["countries"]=wos_version["countries"]
+                                    entry["country"]=wos_version["countries"]
                                     if db_institution:print("Found institution: ",db_institution["name"],", with token: ",wos_version["name"])
                                     institutions_found+=1
                                     aliases.append(wos_version["name"])
@@ -1087,17 +1099,17 @@ class Kahi(KahiBase):
                                     scielo_version={}
                                     for institution in scielo:
                                         ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             scielo_version=institution
                                             break
                                         elif ratio>=50:
                                             ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                            if ratio>90:
+                                            if ratio>=80:
                                                 scielo_version=institution
                                                 break
                                             elif ratio>=50:
                                                 ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                                if ratio>90:
+                                                if ratio>=80:
                                                     scielo_version=institution
                                                     break
                                     try:
@@ -1107,7 +1119,7 @@ class Kahi(KahiBase):
                                         result["number_of_results"]=1
                                         result["items"]=[{"score":0}]
                                     if result["number_of_results"]!=0:
-                                        if result["items"][0]["score"]>0.9:
+                                        if result["items"][0]["score"]>0.8:
                                             try:
                                                 gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                                 db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1115,7 +1127,7 @@ class Kahi(KahiBase):
                                             except:
                                                 if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                             entry["author"]=scielo_version["author"]
-                                            entry["countries"]=scielo_version["countries"]
+                                            entry["country"]=scielo_version["countries"]
                                             if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
                                             institutions_found+=1
                                             aliases.append(scielo_version["name"])
@@ -1125,17 +1137,17 @@ class Kahi(KahiBase):
                                             scopus_version={}
                                             for institution in scopus:
                                                 ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                                if ratio>90:
+                                                if ratio>=80:
                                                     scopus_version=institution
                                                     break
                                                 elif ratio>=50:
                                                     ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                                    if ratio>90:
+                                                    if ratio>=80:
                                                         scopus_version=institution
                                                         break
                                                     elif ratio>=50:
                                                         ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
-                                                        if ratio>90:
+                                                        if ratio>=80:
                                                             scopus_version=institution
                                                             break
                                             try:
@@ -1145,7 +1157,7 @@ class Kahi(KahiBase):
                                                 result["number_of_results"]=1
                                                 result["items"]=[{"score":0}]
                                             if result["number_of_results"]!=0:
-                                                if result["items"][0]["score"]>0.9:
+                                                if result["items"][0]["score"]>0.8:
                                                     try:
                                                         gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                                         db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1158,8 +1170,61 @@ class Kahi(KahiBase):
                                                     aliases.append(scopus_version["name"])
                                                     entry["aliases"]=list(set(aliases))
                                                     self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}}) 
+                                                else:
+                                                    entry["id"]=""
+                                                    entry["country"]=scopus_version["countries"]
+                                        else:
+                                            entry["id"]=""
+                                            entry["country"]=scielo_version["countries"]
+                        elif scopus:
+                            scopus_version={}
+                            for institution in scopus:
+                                #print("COMPARING ",institution["name"]," WITH ",lens[i]["name"])
+                                #print("partial ratio: ",fuzz.partial_ratio(institution["name"],lens[i]["name"]))
+                                #print("token set ratio: ",fuzz.token_set_ratio(institution["name"],lens[i]["name"]))
+                                #print("partial token set ratio: ",fuzz.partial_token_set_ratio(institution["name"],lens[i]["name"]))
+                                ratio=fuzz.partial_ratio(institution["name"].lower(),lens[i]["name"].lower())
+                                if ratio>=80:
+                                    scopus_version=institution
+                                    break
+                                elif ratio>=50:
+                                    ratio=fuzz.token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
+                                    if ratio>=80:
+                                        scopus_version=institution
+                                        break
+                                    elif ratio>=50:
+                                        ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),lens[i]["name"].lower())
+                                        if ratio>=80:
+                                            scopus_version=institution
+                                            break
+                            try:
+                                entry["country"]=scopus_version["countries"]
+                                result=self.find_grid(token=scopus_version["name"])
+                            except:
+                                result={}
+                                result["number_of_results"]=1
+                                result["items"]=[{"score":0}]
+                            if result["number_of_results"]!=0:
+                                #print("Best ROR result was: ",result["items"][0])
+                                if result["items"][0]["score"]>0.8:
+                                    if self.verbose==5:print("Found institution with scopus data")
+                                    try:
+                                        gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                                        db_institution=self.griddb["stage"].find_one({"id":gridid})
+                                        entry["id"]=db_institution["_id"]
+                                    except:
+                                        if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
+                                    entry["author"]=scopus_version["author"]
+                                    if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scopus_version["name"])
+                                    institutions_found+=1
+                                    aliases.append(scopus_version["name"])
+                                    entry["aliases"]=list(set(aliases))
+                                    self.griddb["stage"].update_one({"_id":entry["id"]},{"$push":{"aliases":entry["aliases"]}}) 
+                                else:
+                                    entry["id"]=""
+                                    entry["country"]=scopus_version["countries"]
+                            
                 else: #If there is an author but no institution gridid or name
-                    
                     print("Institution not found")
                 institutions.append(entry)            
                 if institutions_count==institutions_found:
@@ -1169,18 +1234,18 @@ class Kahi(KahiBase):
         #END OF LENS PORTION
         elif wos: #if not lens at all
             institutions_count=len(wos)
-            print("Searching: ",institutions_count," institutions.")
+            print("Searching: ",institutions_count," institutions in wos.")
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
                 entry["author"]=""
-                entry["countries"]=wos[i]["countries"]
+                entry["country"]=wos[i]["countries"]
                 if not wos[i]["name"]: continue
                 result=self.find_grid(token=wos[i]["name"])
                 if result["number_of_results"]!=0:
-                    if result["items"][0]["score"]>0.9:
+                    if result["items"][0]["score"]>0.8:
                         try:
                             gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                             db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1197,17 +1262,17 @@ class Kahi(KahiBase):
                         scielo_version={}
                         for institution in scielo:
                             ratio=fuzz.partial_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 scielo_version=institution
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     scielo_version=institution
                                     break
                                 elif ratio>=50:
                                     ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         scielo_version=institution
                                         break
                         try:
@@ -1217,7 +1282,7 @@ class Kahi(KahiBase):
                             result["number_of_results"]=1
                             result["items"]=[{"score":0}]
                         if result["number_of_results"]!=0:
-                            if result["items"][0]["score"]>0.9:
+                            if result["items"][0]["score"]>0.8:
                                 try:
                                     gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                     db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1225,7 +1290,7 @@ class Kahi(KahiBase):
                                 except:
                                     if self.verbose>2:print("Could not find id ",gridid,"in GRID db")
                                 entry["author"]=scielo_version["author"]
-                                entry["countries"]=scielo_version["countries"]
+                                entry["country"]=scielo_version["countries"]
                                 if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo_version["name"])
                                 institutions_found+=1
                                 aliases.append(scielo_version["name"])
@@ -1235,17 +1300,17 @@ class Kahi(KahiBase):
                                 scopus_version={}
                                 for institution in scopus:
                                     ratio=fuzz.partial_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         scopus_version=institution
                                         break
                                     elif ratio>=50:
                                         ratio=fuzz.token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                                        if ratio>90:
+                                        if ratio>=80:
                                             scopus_version=institution
                                             break
                                         elif ratio>=50:
                                             ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),wos[i]["name"].lower())
-                                            if ratio>90:
+                                            if ratio>=80:
                                                 scopus_version=institution
                                                 break
                                 try:
@@ -1255,7 +1320,7 @@ class Kahi(KahiBase):
                                     result["number_of_results"]=1
                                     result["items"]=[{"score":0}]
                                 if result["number_of_results"]!=0:
-                                    if result["items"][0]["score"]>0.9:
+                                    if result["items"][0]["score"]>0.8:
                                         try:
                                             gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                             db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1279,18 +1344,18 @@ class Kahi(KahiBase):
 
         elif scielo:
             institutions_count=len(scielo)
-            print("Searching: ",institutions_count," institutions.")
+            print("Searching: ",institutions_count," institutions in scielo.")
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
                 entry["id"]=""
                 entry["aliases"]=[]
                 entry["author"]=""
-                entry["countries"]=scielo[i]["countries"]
+                entry["country"]=scielo[i]["country"]
                 if not scielo[i]["name"]: continue
                 result=self.find_grid(token=scielo[i]["name"])
                 if result["number_of_results"]!=0:
-                    if result["items"][0]["score"]>0.9:
+                    if result["items"][0]["score"]>0.8:
                         try:
                             gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                             db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1302,7 +1367,7 @@ class Kahi(KahiBase):
                         else:
                             if scopus:
                                 for institution in scopus:
-                                    if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>90:
+                                    if fuzz.partial_ratio(institution["name"],scielo[i]["name"])>=80:
                                         entry["author"]=institution["author"]
                         if db_institution:print("Found institution: ",db_institution["name"],", with token: ",scielo[i]["name"])
                         institutions_found+=1
@@ -1313,17 +1378,17 @@ class Kahi(KahiBase):
                         scopus_version={}
                         for institution in scopus:
                             ratio=fuzz.partial_ratio(institution["name"].lower(),scielo[i]["name"].lower())
-                            if ratio>90:
+                            if ratio>=80:
                                 scopus_version=institution
                                 break
                             elif ratio>=50:
                                 ratio=fuzz.token_set_ratio(institution["name"].lower(),scielo[i]["name"].lower())
-                                if ratio>90:
+                                if ratio>=80:
                                     scopus_version=institution
                                     break
                                 elif ratio>=50:
                                     ratio=fuzz.partial_token_set_ratio(institution["name"].lower(),scielo[i]["name"].lower())
-                                    if ratio>90:
+                                    if ratio>=80:
                                         scopus_version=institution
                                         break
                         try:
@@ -1333,7 +1398,7 @@ class Kahi(KahiBase):
                             result["number_of_results"]=1
                             result["items"]=[{"score":0}]
                         if result["number_of_results"]!=0:
-                            if result["items"][0]["score"]>0.9:
+                            if result["items"][0]["score"]>0.8:
                                 try:
                                     gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                                     db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1356,7 +1421,7 @@ class Kahi(KahiBase):
 
         elif scopus:
             institutions_count=len(scopus)
-            print("Searching: ",institutions_count," institutions.")
+            print("Searching: ",institutions_count," institutions in scopus.")
             for i in range(institutions_count):
                 entry={}
                 aliases=[]
@@ -1366,7 +1431,7 @@ class Kahi(KahiBase):
                 if not scopus[i]["name"]: continue
                 result=self.find_grid(token=scopus[i]["name"])
                 if result["number_of_results"]!=0:
-                    if result["items"][0]["score"]>0.9:
+                    if result["items"][0]["score"]>0.8:
                         try:
                             gridid=result["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
                             db_institution=self.griddb["stage"].find_one({"id":gridid})
@@ -1414,7 +1479,7 @@ class Kahi(KahiBase):
             author["affiliations"]=[]
             for institution in institutions:
                 if institution["author"]=="":continue
-                if fuzz.token_set_ratio(author["full_name"],institution["author"])>90:
+                if fuzz.token_set_ratio(author["full_name"],institution["author"])>=80:
                     inst=institution.copy()
                     del(inst["aliases"])
                     del(inst["author"])
@@ -1429,7 +1494,7 @@ class Kahi(KahiBase):
                         "initials":"R",
                         "external_ids":[],
                         "aliases":[],
-                        "corresponding":False,
+                        "corresponding":"",
                         "corresponding_address":"",
                         "corresponding_email":"",
                         "updated":666,
@@ -1640,7 +1705,7 @@ class Kahi(KahiBase):
                 return 0
             else: pass
         
-        wosregister=self.wosdb["stage"].find_one({"DI":doi})
+        wosregister=self.wosdb["stage"].find_one({"doi_idx":doi})
         if wosregister:
             wosdoc,wosau,wosinst,wossource=self.wos_parser.parse_one(wosregister)
         else:
@@ -1652,25 +1717,25 @@ class Kahi(KahiBase):
         else:
             lensdoc,lensau,lensinst,lenssource=[None,None,None,None]
 
-        scieloregister=self.scielodb["stage"].find_one({"DI":doi})
+        scieloregister=self.scielodb["stage"].find_one({"doi_idx":doi})
         if scieloregister:
             scielodoc,scieloau,scieloinst,scielosource=self.scielo_parser.parse_one(scieloregister)
         else:
             scielodoc,scieloau,scieloinst,scielosource=[None,None,None,None]
 
-        scopusregister=self.scopusdb["stage"].find_one({"DOI":doi})
+        scopusregister=self.scopusdb["stage"].find_one({"doi_idx":doi})
         if scopusregister:
             scopusdoc,scopusau,scopusinst,scopussource=self.scopus_parser.parse_one(scopusregister)
         else:
             scopusdoc,scopusau,scopusinst,scopussource=[None,None,None,None]
 
-        scholarregister=self.scholardb["stage"].find_one({"doi":doi})
+        scholarregister=self.scholardb["stage"].find_one({"doi_idx":doi})
         if scholarregister:
             scholardoc,scholarau,scholarinst,scholarsource=self.scholar_parser.parse_one(scholarregister)
         else:
             scholardoc,scholarau,scholarinst,scholarsource=[None,None,None,None]
 
-        oadoiregister=self.oadoidb["stage"].find_one({"doi":doi})
+        oadoiregister=self.oadoidb["stage"].find_one({"doi_idx":doi})
         if oadoiregister:
             oadoidoc,oadoiau,oadoiinst,oadoisource=self.oadoi_parser.parse_one(oadoiregister)
         else:
@@ -1821,7 +1886,7 @@ class Kahi(KahiBase):
             if "external_ids" in reg.keys():
                 if reg["external_ids"]:
                     for ext in reg["external_ids"]:
-                        if ext["type"]=="doi":
+                        if ext["type"]=="doi_idx":
                             lens_list.append(ext["value"])
         if lens:
             Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in lens_list)
@@ -1829,18 +1894,18 @@ class Kahi(KahiBase):
         
         wos_list=[]
         for reg in self.wosdb["stage"].find():
-            if "DI" in reg.keys():
-                if reg["DI"]:
-                    wos_list.append(reg["DI"])
+            if "doi_idx" in reg.keys():
+                if reg["doi_idx"]:
+                    wos_list.append(reg["doi_idx"])
         wos_not_lens_list=set(wos_list)-set(wos_list).intersection(lens_list)
         if wos:
             Parallel(n_jobs=num_jobs,backend="threading",verbose=10)(delayed(self.update_one)(doi) for doi in wos_not_lens_list)
 
         scielo_list=[]
         for reg in self.scielodb["stage"].find():
-            if "DI" in reg.keys():
-                if reg["DI"]:
-                    scielo_list.append(reg["DI"])
+            if "doi_idx" in reg.keys():
+                if reg["doi_idx"]:
+                    scielo_list.append(reg["doi_idx"])
         lens_list.extend(wos_list)
         uniq=set(lens_list)
         scielo_not_wos_not_lens_list=set(scielo_list)-set(scielo_list).intersection(uniq)
@@ -1850,8 +1915,8 @@ class Kahi(KahiBase):
         scopus_list=[]
         for reg in self.scopusdb["stage"].find():
             if "DOI" in reg.keys():
-                if reg["DOI"]:
-                    scopus_list.append(reg["DOI"])
+                if reg["doi_idx"]:
+                    scopus_list.append(reg["doi_idx"])
         lens_list.extend(scielo_list)
         uniq=set(lens_list)
         scopus_not_scielo_not_wos_not_lens_list=set(scopus_list)-set(scopus_list).intersection(uniq)

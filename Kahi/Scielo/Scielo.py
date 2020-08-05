@@ -290,6 +290,8 @@ class Scielo():
                     entry["corresponding"]=""
                     entry["corresponding_email"]=""
             authors.append(entry)
+        if len(authors)==1:
+            authors[0]["corresponding"]=True
         return authors
 
     def parse_institutions(self,register):
@@ -309,10 +311,7 @@ class Scielo():
         inst=[]
         #if "" in register.keys(): inst[""]=register[""]
         if "C1" in register.keys():
-            #print(register["C1"].rstrip().split("\n"))
-            C1=register["C1"].rstrip().replace(".","")
-            if C1[:1]=="\n":
-                C1=C1[1:]
+            C1=register["C1"].strip().replace(".","")
             for auwaf in C1.split("\n"):
                 aulen=len(auwaf.split(";"))
                 if aulen==1:

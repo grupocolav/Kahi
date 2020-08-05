@@ -200,6 +200,8 @@ class Lens():
                 else:
                     entry["full_name"]=entry["last_names"]
                 authors.append(entry)
+            if len(authors)==1:
+                authors[0]["corresponding"]=True
 
         return authors
 
