@@ -289,6 +289,24 @@ class Lens():
                         source["country"]="CN"
                     elif reg["source"]["country"].lower()=="scotland":
                         source["country"]="GB"
+                    elif reg["source"]["country"].lower()=="iran":
+                        source["country"]="IR"
+                    elif reg["source"]["country"].lower()=="south korea":
+                        source["country"]="KR"
+                    elif reg["source"]["country"].lower()=="u arab emirates":
+                        source["country"]="AE"
+                    elif reg["source"]["country"].lower()=="dem rep congo":
+                        source["country"]="CD"
+                    elif reg["source"]["country"].lower()=="tanzania":
+                        source["country"]="TZ"
+                    elif reg["source"]["country"].lower()=="taiwan":
+                        source["country"]="TW"
+                    elif reg["source"]["country"].lower()=="wales":
+                        source["country"]="GB"
+                    elif reg["source"]["country"].lower()=="micronesia":
+                        source["country"]="FM"
+                    elif reg["source"]["country"].lower()=="bolivia":
+                        source["country"]="BO"
                     else:
                         try:
                             source["country"]=iso3166.countries_by_name.get(reg["source"]["country"].upper()).alpha2

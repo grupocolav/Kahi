@@ -319,6 +319,9 @@ class Scielo():
                     if len(auaff)==1:
                         aff=auwaf
                         authors=[""]
+                        if "AF" in register.keys():
+                            if len(register["AF"].rstrip().split("\n"))==1:
+                                authors=register["AF"].rstrip()
                     else:
                         aff=auaff[1]
                         authors=[auaff[0][1:]]
@@ -343,8 +346,6 @@ class Scielo():
                     country="CN"
                 elif aff.split(", ")[-1].replace(".","").upper()=="SCOTLAND":
                     country="GB"
-                elif aff.split(", ")[-1].replace(".","").upper()=="SCOTLAND":
-                    country="GB"
                 elif aff.split(", ")[-1].replace(".","").upper()=="IRAN":
                     country="IR"
                 elif aff.split(", ")[-1].replace(".","").upper()=="SOUTH KOREA":
@@ -367,11 +368,11 @@ class Scielo():
                     try:
                         country=iso3166.countries_by_name.get(aff.split(", ")[-1].replace(".","").upper()).alpha2
                     except:
-                        print("could not parse: ",aff.split(", ")[-1].replace(".","").upper())
+                        #print("could not parse: ",aff.split(", ")[-1].replace(".","").upper())
                         country=""
-                for i in range(aulen):
+                for i in range(len(authors)):
                     author=authors[i] if authors else ""
-                    inst.append({"name":name,"countries":[country],"author":author}) ##LAST PART OF aff HAS THE COUNTRY
+                    inst.append({"name":name,"countries":country,"author":author}) ##LAST PART OF aff HAS THE COUNTRY
         return inst
 
     def parse_source(self,register):

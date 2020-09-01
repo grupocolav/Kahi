@@ -211,7 +211,7 @@ class Scopus():
                     #print(author,corresponding_author)
                     #print("\n")
                     if corresponding_author:
-                        print(author,corresponding_author)
+                        #print(author,corresponding_author)
                         rate=fuzz.partial_ratio(author,corresponding_author)
                         if rate>90:
                             entry["corresponding"]=True
@@ -277,22 +277,97 @@ class Scopus():
             if reg["Authors with affiliations"] and reg["Authors with affiliations"]==reg["Authors with affiliations"]:
                 auwaf_list=reg["Authors with affiliations"].split("; ")
                 for i in range(len(auwaf_list)):
-                    auaf=split('(^[\w\-]+,\s+[\w\s\.]+,\s)',auwaf_list[i],UNICODE)
-                    author=auaf[1]
-                    affiliations=auaf[-1]
+                    auaf=split('(^[\w\-\s\.]+,\s+[\w\s\.\-]+,\s)',auwaf_list[i],UNICODE)
+                    if len(auaf)==1:
+                        author=auaf[0]
+                        affiliations=""
+                    else:
+                        author=auaf[1]
+                        affiliations=auaf[-1]
                     countries=GeoText(affiliations).countries
                     for country in countries[:-1]:
                         country_affiliation_list=affiliations.split(country+', ')
                         if country=="United Kingdom":
                             country_alpha2="GB"
+                        elif country.lower()=="venezuela":
+                            country_alpha2='VE'
+                        elif country.lower()=="united states":
+                            country_alpha2='US'
+                        elif country.lower()=="czech republic":
+                            country_alpha2="CZ"
+                        elif country.lower()=="vietnam":
+                            country_alpha2="VN"
+                        elif country.lower()=="russia":
+                            country_alpha2="RU"
+                        elif country.lower()=="peoples r china":
+                            country_alpha2="CN"
+                        elif country.lower()=="scotland":
+                            country_alpha2="GB"
+                        elif country.lower()=="iran":
+                            country_alpha2="IR"
+                        elif country.lower()=="south korea":
+                            country_alpha2="KR"
+                        elif country.lower()=="u arab emirates":
+                            country_alpha2="AE"
+                        elif country.lower()=="dem rep congo":
+                            country_alpha2="CD"
+                        elif country.lower()=="tanzania":
+                            country_alpha2="TZ"
+                        elif country.lower()=="taiwan":
+                            country_alpha2="TW"
+                        elif country.lower()=="wales":
+                            country_alpha2="GB"
+                        elif country.lower()=="micronesia":
+                            country_alpha2="FM"
+                        elif country.lower()=="reunion":
+                            continue
                         else:
-                            country_alpha2=country=iso3166.countries_by_name.get(country.upper()).alpha2
+                            try:
+                                country_alpha2=country=iso3166.countries_by_name.get(country.upper()).alpha2
+                            except:
+                                #print("Could not parse: ",country)
+                                country_alpha2=""
                         inst.append({"name":country_affiliation_list[0]+country,"author":author,"countries":country_alpha2})
                         affiliations=country_affiliation_list[-1] #what is left
-                    if countries[-1]=="United Kingdom":
-                        country_alpha2="GB"
-                    else:
-                        country_alpha2=country=iso3166.countries_by_name.get(countries[-1].upper()).alpha2
+                    try:
+                        #print(i,countries[-1])
+                        if countries[-1].lower()=="united kingdom":
+                            country_alpha2="GB"
+                        elif countries[-1].lower()=="venezuela":
+                            country_alpha2='VE'
+                        elif countries[-1].lower()=="united states":
+                            country_alpha2='US'
+                        elif countries[-1].lower()=="czech republic":
+                            country_alpha2="CZ"
+                        elif countries[-1].lower()=="vietnam":
+                            country_alpha2="VN"
+                        elif countries[-1].lower()=="russia":
+                            country_alpha2="RU"
+                        elif countries[-1].lower()=="peoples r china":
+                            country_alpha2="CN"
+                        elif countries[-1].lower()=="scotland":
+                            country_alpha2="GB"
+                        elif countries[-1].lower()=="iran":
+                            country_alpha2="IR"
+                        elif countries[-1].lower()=="south korea":
+                            country_alpha2="KR"
+                        elif countries[-1].lower()=="u arab emirates":
+                            country_alpha2="AE"
+                        elif countries[-1].lower()=="dem rep congo":
+                            country_alpha2="CD"
+                        elif countries[-1].lower()=="tanzania":
+                            country_alpha2="TZ"
+                        elif countries[-1].lower()=="taiwan":
+                            country_alpha2="TW"
+                        elif countries[-1].lower()=="wales":
+                            country_alpha2="GB"
+                        elif countries[-1].lower()=="micronesia":
+                            country_alpha2="FM"
+                        else:
+                            country_alpha2=country=iso3166.countries_by_name.get(countries[-1].upper()).alpha2
+                    except:
+                        #print("Could not parse country")
+                        country_alpha2=""
                     inst.append({"name":affiliations,"author":author,"countries":country_alpha2})
                     """if len(auaf)==1:
                         auaf=auwaf_list[i].split(".")
@@ -417,3 +492,4 @@ class Scopus():
                 print(reg)
                 print(e)
         return data
+
