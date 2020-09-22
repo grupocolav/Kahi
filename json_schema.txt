@@ -12,9 +12,14 @@
         "ts":<int>
     }]
     "publication_type":<str>,
-    "title":<str>,
+    "titles":[
+        "title":<str>,
+        "lang":<str>,
+        "title_idx":<str>
+    ],
     "subtitle":<str>,
     "abstract":<str>,
+    "abstract_idx":<str>,
     "keywords":<list of str>,
     "start_page":<int>,
     "end_page":<int>,
@@ -26,7 +31,8 @@
     "bibtex":<str>,
     "funding_organization":<str>,
     "funding_details":<list of str>,
-    "access_type":<str>
+    "is_open_access":<bool>,
+    "access_status":<str>,
     "external_ids":[
         {
             "source":<str>,
@@ -50,8 +56,9 @@
                     "id":<internal id>,
                     "branch":[
                         {
-                            "type": <str>,
-                            "name": <str>
+                            "type": <str>, #grupo
+                            "name": <str>, #meteorlogía
+                            "external_links": <str>
                         }
                     ]
                 }
@@ -64,7 +71,8 @@
         "lens":<list of lens ids>,
         "scholar":<list of scholar ids> 
     },
-    "citations_count":<int>, 
+    "citations_count":<int>,
+    "citations_link":<str>,
     "citations":{
         "colav":<list of internal ids>,
         "lens":<list of lens id>,
@@ -80,7 +88,9 @@
     "first_names": <str>,
     "last_names":<str>,
     "initials":<str>,
-    "aliases":<List of str>
+    "aliases":<List of str>,
+    "affiliations":<list of internal ids>,
+    "keywords":<list of str>,
     "external_ids":[
         {
             "source":<str>,
@@ -94,15 +104,37 @@
 {
     "_id":<internal id>,
     "name":<str>,
-    "grid_id":<str>,
-    "country":<str>,
-    "city":<str>,   
-    "aliases":<List of str>
+    "aliases":<List of str>,
+    "abbvreviations":<list of str>,
+    "types":<list of str>, #Education,nonprofit,government,facilty,healthcare,company
+    "relationships":[
+        "id":<internal id>,
+        "name":<str>,
+        "type":<str> #child, parent, related
+    ] 
+    "addresses":[
+        {
+            "country":<str>,
+            "state":<str>,
+            "city":<str>,... other possible fields
+        }
+    ],   
+    "external_urls":[
+        {
+            "source":<str>,
+            "url":<str>
+        }
+    ],
+    "external_ids":[
+        {
+            "source":<str>,
+            "id":<str>
+        }
+    ]
 }
 
 
 #source collection
-
 {
     "_id":<internal id>,
     "title":<str>,
@@ -117,16 +149,17 @@
     "abbreviations":[
         {
             "type":<str>,
-            "value"
-            poi098oiu987
-             :<str>
+            "value":<str>
         }
     ]
     "country":<str>,
-    "asjc_info":[
-        {
-            "code":<int>,
-            "subject":<str>
-        }
-    ]
+    "subjects":{
+        "source":<str>,
+        "subjects":[
+            {
+                "code":<int>,
+                "subject":<str>
+            }
+        ]
+    }
 }

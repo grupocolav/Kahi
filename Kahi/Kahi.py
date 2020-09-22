@@ -31,7 +31,7 @@ class Kahi(KahiBase):
     * Support for multiple institutions related to one author
     * Finish parsing od OADOI, scholar and DOAJ
     '''
-    def __init__(self,dbserver_url="172.19.31.5",port=27017,colav_db="colav",config_file='etc/db.json',verbose=0):
+    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",config_file='etc/db.json',verbose=0):
         super().__init__(dbserver_url,port,colav_db,verbose=verbose)
         #if config_file:
         #    with open(config_file) as f:
@@ -898,7 +898,7 @@ class Kahi(KahiBase):
         return authors
         
 
-    def find_grid(self,token,url='http://172.19.31.9:9292/organizations?affiliation='):
+    def find_grid(self,token,url='https://api.ror.org/organizations?affiliation='):
         #print("SEARCHING FOR: ",token," IN ROR DB")
         query=urllib.parse.quote(token)
         url='{}{}'.format(url,query)

@@ -29,56 +29,60 @@ class Scopus():
         """
         data={}
         data["updated"]=int(time())
-
+        data["source_checked"]=[{"source":"scopus","ts":int(time())}]
         data["publication_type"]=""
+        data["titles"]=[]
+        data["subtitle"]=""
+        data["abstract"]=""
+        data["abstract_idx"]=""
+        data["keywords"]=[]
+        data["start_page"]=""
+        data["end_page"]=""
+        data["volume"]=""
+        data["issue"]=""
+        data["date_published"]=""
+        data["year_published"]=""
+        data["languages"]=[]
+        data["references_count"]=""
+        data["references"]=[]
+        data["citations_count"]=""
+        data["citations"]=[]
+        data["citations_link"]=""
+        data["funding_details"]=""
+        data["is_open_access"]=""
+        data["access_status"]=""
+        data["external_ids"]=[]
+        data["urls"]=[]
+        data["source"]=""
+        data["author_count"]=""
+        data["authors"]=[]
+
 
         if "Title" in reg.keys():
             data["title"]=reg["Title"]
-        else:
-            data["title"]=""
         if "Year" in reg.keys(): data["year_published"]=reg["Year"]
-        else: data["year_published"]=""
         if "Volume" in reg.keys(): 
             if reg["Volume"] and reg["Volume"]==reg["Volume"]:
                 data["volume"]=reg["Volume"]
-            else:
-                data["volume"]=""
-        else:
-            data["volume"]=""
         if "Issue" in reg.keys():
             if reg["Issue"] and reg["Issue"]==reg["Issue"]:
                 data["issue"]=reg["Issue"]
-            else:
-                data["issue"]=""
-        else:
-            data["issue"]=""
         if "Page start" in reg.keys():
             if reg["Page start"] and reg["Page start"] == reg["Page start"]: #checking for NaN in the second criteria
                 try:
                     data["start_page"]=int(reg["Page start"])
                 except:
-                    data["start_page"]=""
-            else:
-                data["start_page"]=""
-        else:
-            data["start_page"]=""
+                    print("Could not transform start page in int")
         if "Page end" in reg.keys():
             if reg["Page end"] and reg["Page end"] == reg["Page end"]:
                 try:
                     data["end_page"]=int(reg["Page end"])
                 except:
-                    data["end_page"]=""
-            else:
-                data["end_page"]=""
-        else:
-            data["end_page"]=""
+                    print("Could not transform end page in int")
+
         if "Abstract" in reg.keys():
             if reg["Abstract"] and reg["Abstract"]==reg["Abstract"]:
                 data["abstract"]=reg["Abstract"]
-            else:
-                data["abstract"]=""
-        else:
-            data["abstract"]=""
         if "Document type" in reg.keys():
             data["publication_type"]=reg["Document type"].lower()
             if data["publication_type"]=="conference paper":
@@ -109,10 +113,7 @@ class Scopus():
         if "Funding Details" in reg.keys():
             if reg["Funding Details"] and reg["Funding Details"] == reg["Funding Details"]:
                 data["funding_organization"]=reg["Funding Details"]
-            else:
-                data["funding_organization"]=""
-        else:
-            data["funding_organization"]=""
+
         for i in range(1,5):
             texts=[]
             if "Funding Text "+str(i) in reg.keys():
@@ -120,8 +121,6 @@ class Scopus():
                     texts.append(reg["Funding Text "+str(i)])
             if len(texts) != 0:
                 data["funding_details"]=texts
-            else:
-                data["funding_details"]=""
                 
         if "Access Type" in reg.keys():
             if reg["Access Type"] and reg["Access Type"] == reg["Access Type"]:
@@ -135,10 +134,6 @@ class Scopus():
         if "Authors" in reg.keys():
             if reg["Authors"] and reg["Authors"]==reg["Authors"]:
                 data["author_count"]=len(reg["Authors"].split(", "))
-            else:
-                data["author_count"]=""
-        else:
-            data["author_count"]=""
 
 
         data["urls"]=[]
@@ -149,19 +144,11 @@ class Scopus():
             if reg["References"] and reg["References"]==reg["References"]:
                 references=reg["References"].split("; ")
                 data["references_count"]=len(references)
-            else:
-                data["references_count"]=""
-        else:
-            data["references_count"]=""
 
         #CITATION SECTION
         if "Cited by" in reg.keys():
             if reg["Cited by"] and reg["Cited by"]==reg["Cited by"]:
                 data["citations_count"]=int(reg["Cited by"])
-            else:
-                data["citations_count"]=""
-        else:
-            data["citations_count"]=""
 
         return data
 
@@ -195,18 +182,26 @@ class Scopus():
                 if "Author(s) ID" in reg.keys(): ids=reg["Author(s) ID"].split(";")
                 for idx,author in enumerate(reg["Authors"].split(", ")):
                     no_corresponding=True
+                    entry={}
+                    entry["first_names"]=""
+                    entry["national_id"]=""
+                    entry["last_names"]=""
+                    entry["initials"]=""
+                    entry["full_name"]=""
+                    entry["aliases"]=[]
+                    entry["affiliations"]=[]
+                    entry["keywords"]=[]
+                    entry["external_ids"]=[]
+                    entry["corresponding"]=False
+                    entry["corresponding_address"]=""
+                    entry["corresponding_email"]=""
                     try:
-                        entry={"full_name":author,
-                        "first_names":"",
-                        "last_names":author.split(" ")[0],
-                        "initials":author.split(" ")[1].replace(".",""),
-                        "aliases":[],
-                        "national_id":"",
-                        "corresponding":"",
-                        "corresponding_address":"",
-                        "corresponding_email":""}
-                    except:
-                        continue
+                        entry["full_name"]=author
+                        entry["last_names"]=author.split(" ")[0]
+                        entry["initials"]=author.split(" ")[1].replace(".","")
+                    except Exception as e:
+                        print("Could not parse author name in ",reg["doi_idx"])
+                        print(e)
                     #print("\n")
                     #print(author,corresponding_author)
                     #print("\n")
@@ -224,36 +219,22 @@ class Scopus():
                                 entry["corresponding"]=True
                                 entry["corresponding_address"]=corresponding_address
                                 entry["corresponding_email"]=corresponding_email.replace("email: ","")
-                                no_corresponding=False
                             elif rate>50:
                                 rate=fuzz.partial_token_set_ratio(author,corresponding_author)
                                 if rate>90:
                                     entry["corresponding"]=True
                                     entry["corresponding_address"]=corresponding_address
                                     entry["corresponding_email"]=corresponding_email.replace("email: ","")
-                                    no_corresponding=False
                     if ids:
                         try:
                             entry["external_ids"]=[{"source":"scopus","value":ids[idx]}]
-                        except:
-                            continue
+                        except Exception as e:
+                            print("Could not parse author scopus id in ",reg["doi_idx"])
+                            print(e)
                     authors.append(entry)
                 if len(authors)==1:
                     authors[0]["corresponding"]=True
-                    no_corresponding=False
-                if no_corresponding:
-                    entry={
-                        "full_name":corresponding_author,
-                        "first_names":"",
-                        "last_names":"",
-                        "initials":"",
-                        "external_ids":[],
-                        "aliases":[],
-                        "corresponding":True,
-                        "corresponding_address":corresponding_address,
-                        "corresponding_email":corresponding_email,
-                        "updated":666,
-                    }
+
 
 
         return authors
@@ -412,18 +393,20 @@ class Scopus():
            Information of the source in the CoLav standard format
         """
         source={}
+        source["title"]=""
+        source["serials"]=[]
+        source["abbreviations"]=[]
+        source["publisher"]=""
+        source["country"]=""
+        source["subjects"]={}
 
         if "Source title" in reg.keys():
             if reg["Source title"] and reg["Source title"]==reg["Source title"]:
                 source["title"]=reg["Source title"]
-            else:
-                source["title"]=""
-        else:
-            source["title"]=""
+
         if "Abbreviated Source Title" in reg.keys():
-            source["abbreviations"]=[]
             source["abbreviations"].append({"type":"unknown","value":reg["Abbreviated Source Title"]})
-        source["serials"]=[]
+        
         if "ISSN" in reg.keys():
             if reg["ISSN"] and reg["ISSN"]==reg["ISSN"]:
                 source["serials"].append({"type":"unknown","value":reg["ISSN"]})
@@ -431,7 +414,6 @@ class Scopus():
                 source["serials"].append({"type":"isbn","value":reg["ISBN"]})
             if  reg["CODEN"] and reg["CODEN"]==reg["CODEN"]:
                 source["serials"].append({"type":"coden","value":reg["CODEN"]})
-        source["publisher"]=""
 
         return source
 

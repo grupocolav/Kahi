@@ -1,6 +1,7 @@
 from time import time
 from datetime import datetime as dt
 import iso3166
+from langid import classify
 
 class Lens():
     def __init__(self):
@@ -25,92 +26,78 @@ class Lens():
         """
         data={}
         data["updated"]=int(time())
+        data["source_checked"]=[{"source":"lens","ts":int(time())}]
+        data["publication_type"]=""
+        data["titles"]=[]
+        data["subtitle"]=""
+        data["abstract"]=""
+        data["abstract_idx"]=""
+        data["keywords"]=[]
+        data["start_page"]=""
+        data["end_page"]=""
+        data["volume"]=""
+        data["issue"]=""
+        data["date_published"]=""
+        data["year_published"]=""
+        data["languages"]=[]
+        data["references_count"]=""
+        data["references"]=[]
+        data["citations_count"]=""
+        data["citations"]=[]
+        data["citations_link"]=""
+        data["funding_details"]=""
+        data["is_open_access"]=""
+        data["access_status"]=""
+        data["external_ids"]=[]
+        data["urls"]=[]
+        data["source"]=""
+        data["author_count"]=""
+        data["authors"]=[]
+
 
         if "publication_type" in reg.keys():
             if reg["publication_type"] and reg["publication_type"]==reg["publication_type"]:
                 data["publication_type"]=reg["publication_type"].lower() #Names of types of publications?
-            else:
-                data["publication_type"]=""
-        else:
-            data["publication_type"]=""
         if "title" in reg.keys():
             data["title"]=reg["title"]
-        else:
-            data["title"]=""
         if "abstract" in reg.keys():
             if reg["abstract"] and reg["abstract"]==reg["abstract"]:
                 data["abstract"]=reg["abstract"]
-            else:
-                data["abstract"]=""
         if "start_page" in reg.keys():
             if reg["start_page"] and reg["start_page"]==reg["start_page"]:
                 try:
                     data["start_page"]=int(reg["start_page"])
                 except:
-                    data["start_page"]=""
-            else:
-                data["start_page"]=""
-        else:
-            data["start_page"]=""
+                    print("Could not transform start page in int")
         if "end_page" in reg.keys():
             if reg["end_page"] and reg["end_page"]==reg["end_page"]:
                 try:
                     data["end_page"]=int(reg["end_page"])
                 except:
-                    data["end_page"]=""
-            else:
-                data["end_page"]=""
-        else:
-            data["end_page"]=""
+                    print("Could not transform end page in int")
         if "volume" in reg.keys():
             if reg["volume"] and reg["volume"]==reg["volume"]:
                 data["volume"]=reg["volume"]
-            else:
-                data["volume"]=""
-        else:
-            data["volume"]=""
         if "issue" in reg.keys():
             if reg["issue"] and reg["issue"]==reg["issue"]:
                 data["issue"]=reg["issue"]
-            else:
-                data["issue"]=""
-        else:
-            data["issue"]=""
         if "languages" in reg.keys():
             if reg["languages"] and reg["languages"]==reg["languages"]:
                 data["languages"]=reg["languages"]
-            else:
-                data["languages"]=""
-        else:
-            data["languages"]=""
         if "year_published" in reg.keys():
             if reg["year_published"] and reg["year_published"]==reg["year_published"]:
                 data["year_published"]=reg["year_published"]
-            else:
-                data["year_published"]==""
-        else:
-            data["year_published"]=""
         if "date_published" in reg.keys():
             if "date" in reg["date_published"].keys():
                 if reg["date_published"]["date"] and reg["date_published"]["date"]==reg["date_published"]["date"]:
                     try:
                         data["date_published"]=int(dt.strptime(reg["date_published"]["date"],"%Y-%m-%dT%H:%M:%S%z").timestamp())
                     except:
-                        data["date_published"]=""
-                else:
-                    data["date_published"]=""
-            else:
-                data["date_published"]=""
-        else:
-            data["date_published"]=""
+                        print("Something went wrong parsing the date published")
 
         if "authors_count" in reg.keys():
             if reg["author_count"] and reg["author_count"]==reg["author_count"]:
                 data["author_count"]=reg["author_count"]
-            else:
-                data["author_count"]=""
-        else:
-            data["author_count"]=""
         
         if "authors" in reg.keys() and data["author_count"]=="":
             if reg["authors"] and reg["authors"]==reg["authors"]:
@@ -130,16 +117,12 @@ class Lens():
                         data["external_ids"].append({"source":ext["source"],"id":ext["id"]})
         
         #URLS
-        data["urls"]=[]
+
 
         #REFERENCES SECTION
         if "references_count" in reg.keys():
             if reg["references_count"] and reg["references_count"]==reg["references_count"]: 
                 data["references_count"]=reg["references_count"]
-            else:
-                data["references_count"]=""
-        else:
-            data["references_count"]=""
         references=[]
         if "references" in reg.keys():
             if reg["references"] and reg["references"]==reg["references"]:
@@ -177,24 +160,27 @@ class Lens():
         if "authors" in reg.keys():
             for author in reg["authors"]:
                 entry={}
+                entry["first_names"]=""
+                entry["national_id"]=""
+                entry["last_names"]=""
+                entry["initials"]=""
+                entry["full_name"]=""
+                entry["aliases"]=[]
+                entry["affiliations"]=[]
+                entry["keywords"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=False
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
                 if "first_name" in author.keys():
                     if author["first_name"]==author["first_name"]:
                         entry["first_names"]=author["first_name"]
-                    else:
-                        entry["first_names"]=""
-                else:
-                    entry["first_names"]=""
+
                 if "last_name" in author.keys():
                     if author["last_name"]==author["last_name"]:
                         entry["last_names"]=author["last_name"]
-                    else:
-                        entry["last_names"]=""
-                else:
-                    entry["last_names"]=""
                 if "initials" in author.keys():
                     entry["initials"]=author["initials"]
-                else:
-                    entry["initials"]=""
                 if entry["first_names"]:
                     entry["full_name"]=entry["first_names"]+" "+entry["last_names"]
                 else:
@@ -257,20 +243,22 @@ class Lens():
            Information of the source in the CoLav standard format
         """
         source={}
+        source["title"]=""
+        source["serials"]=[]
+        source["abbreviations"]=[]
+        source["publisher"]=""
+        source["country"]=""
+        source["subjects"]={}
 
         if "source" in reg.keys():
             if "title_full" in reg["source"].keys():
                 if reg["source"]["title_full"]:
                     source["title"]=reg["source"]["title_full"]
-                else:
-                    source["title"]=""
+
             if "publisher" in reg["source"].keys():
                 if reg["source"]["publisher"] and reg["source"]["publisher"]==reg["source"]["publisher"]:
                     source["publisher"]=reg["source"]["publisher"]
-                else:
-                    source["publisher"]=""
-            else:
-                source["publisher"]=""
+
             if "country" in reg["source"].keys():
                 if reg["source"]["country"]:
                     if reg["source"]["country"].lower()=="united kingdom":
@@ -313,10 +301,7 @@ class Lens():
                         except:
                             print("Could not parse: ",reg["source"]["country"].upper())
                             source["country"]=""
-                else:
-                    source["country"]=""
-            else:
-                source["country"]=""
+
             serial=[]
             if "issn" in reg["source"].keys():
                 if reg["source"]["issn"]:
@@ -328,7 +313,7 @@ class Lens():
                         elif issn["type"] == "unknown":
                             serial.append({"type":"unknown","value":issn["value"].upper()})
                 source["serials"]=serial
-                source["abbreviations"]=[]
+
 
 
         return source

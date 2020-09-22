@@ -35,6 +35,34 @@ class WebOfScience():
         """
         data={}
         data["updated"]=int(time())
+        data["source_checked"]=[{"source":"wos","ts":int(time())}]
+        data["publication_type"]=""
+        data["titles"]=[]
+        data["subtitle"]=""
+        data["abstract"]=""
+        data["abstract_idx"]=""
+        data["keywords"]=[]
+        data["start_page"]=""
+        data["end_page"]=""
+        data["volume"]=""
+        data["issue"]=""
+        data["date_published"]=""
+        data["year_published"]=""
+        data["languages"]=[]
+        data["references_count"]=""
+        data["references"]=[]
+        data["citations_count"]=""
+        data["citations"]=[]
+        data["citations_link"]=""
+        data["funding_details"]=""
+        data["is_open_access"]=""
+        data["access_status"]=""
+        data["external_ids"]=[]
+        data["urls"]=[]
+        data["source"]=""
+        data["author_count"]=""
+        data["authors"]=[]
+        
         #Depending on the type of publication
         #this should fill fields with different information
         #For example if it is an article a book or a conference
@@ -42,106 +70,64 @@ class WebOfScience():
         if "DT" in register.keys():
             if register["DT"] and register["DT"]==register["DT"]:
                 data["publication_type"]=register["DT"].rstrip().lower()
-            else:
-                data["publication_type"]=""
-        else:
-            data["publication_type"]=""
         if "PT" in register.keys():
             if register["PT"].rstrip()=="J":
                 if "AU" in register.keys():
                     data["author_count"]=len(register["AU"].rstrip().split("\n"))
-                else:
-                    data["author_count"]=""
             elif register["PT"].rstrip()=="B":
                 data["publication_type"]="book"
                 if "BA" in register.keys():
                     data["author_count"]=len(register["BA"].rstrip().split("\n"))
-                else:
-                    data["author_count"]=""
             elif register["PT"].rstrip()=="S":
                 data["publication_type"]="series"
                 if "AU" in register.keys():
                     data["author_count"]=len(register["AU"].rstrip().split("\n"))
-                else:
-                    data["author_count"]=""
             elif register["PT"].rstrip()=="P":
                 data["publication_type"]="patent"
                 if "AU" in register.keys():
                     data["author_count"]=len(register["AU"].rstrip().split("\n"))
-                else:
-                    data["author_count"]=""
             else:
                 data["publication_type"]=""
                 if "AU" in register.keys():
                     data["author_count"]=len(register["AU"].rstrip().split("\n"))
-                else:
-                    data["author_count"]=""
         else:
             data["publication_type"]=""
             if "AU" in register.keys():
                 data["author_count"]=len(register["AU"].rstrip().split("\n"))
-            else:
-                data["author_count"]=""
             
         if "TI" in register.keys():
             if register["TI"] and register["TI"]==register["TI"]:
                 data["title"]=register["TI"].rstrip()
-            else:
-                data["title"]=""
         if "AB" in register.keys():
             if register["AB"] and register["AB"]==register["AB"]:
                 data["abstract"]=register["AB"].rstrip()
-            else:
-                data["abstract"]=""
-        else:
-            data["abstract"]=""
         if "BP" in register.keys():
             if register["BP"] and register["BP"]==register["BP"]:
                 try:
                     data["start_page"]=int(register["BP"].rstrip())
                 except:
-                    data["start_page"]=""
-            else:
-                data["start_page"]=""
-        else:
-            data["start_page"]=""
+                    print("Could not transform start page to int")
         if "EP" in register.keys():
             if register["EP"] and register["EP"]==register["EP"]:
                 try:
                     data["end_page"]=int(register["EP"].rstrip())
                 except:
-                    data["end_page"]=""
-            else:
-                data["end_page"]=""
-        else:
-            data["end_page"]=""
+                    print("Could not transform end page to int")
         if "VL" in register.keys():
             if register["VL"] and register["VL"]==register["VL"]:
                 try:
                     data["volume"]=int(register["VL"].rstrip())
                 except:
-                    data["volume"]=""
-            else:
-                data["volume"]=""
-        else:
-            data["volume"]=""
+                    print("Could not transform volume to int")
         if "IS" in register.keys():
             if register["IS"] and register["IS"]==register["IS"]:
                 try:
                     data["issue"]=int(register["IS"].rstrip())
                 except:
-                    data["issue"]=""
-            else:
-                data["issue"]=""
-        else:
-            data["issue"]=""
+                    print("Could not transform issue to int")
         if "PY" in register.keys():
             if register["PY"] and register["PY"]==register["PY"]:
                 data["year_published"]=int(register["PY"].rstrip())
-            else:
-                data["year_published"]=""
-        else:
-            data["year_published"]=""
         if "LA" in register.keys():
             if register["LA"] and register["LA"]==register["LA"]:
                 langs=register["LA"].rstrip().split("\n")
@@ -157,10 +143,6 @@ class WebOfScience():
                             data["languages"].append("")
                         else:
                             data["languages"].append(iso639.languages.inverted.get(lang).part1)
-            else:
-                data["languages"]=""
-        else:
-            data["languages"]=""
         
         #external_ids
         data["external_ids"]=[]
@@ -176,8 +158,6 @@ class WebOfScience():
             if register["UT"]:
                 ext={"source":"wos","id":register["UT"].rstrip().split(":")[1]}
                 data["external_ids"].append(ext)
-        
-        data["urls"]=[]
 
         #REFERENCES SECTION
         if "NR" in register.keys():
@@ -185,11 +165,7 @@ class WebOfScience():
                 try:
                     data["references_count"]=int(register["NR"].rstrip())
                 except:
-                    data["references_count"]=""
-            else:
-                data["references_count"]=""
-        else:
-            data["references_count"]=""
+                    print("Could not transform references count to int")
 
         #CITATIONS SECTION
         if "Z9" in register.keys():
@@ -197,11 +173,7 @@ class WebOfScience():
                 try:
                    data["citations_count"]=int(register["Z9"].rstrip())
                 except:
-                    data["citations_count"]=""
-            else:
-                data["citations_count"]=""
-        else:
-            data["citations_count"]=""
+                    print("Could not transform citations count to int")
 
         return data
 
@@ -238,6 +210,19 @@ class WebOfScience():
                     if register["RP"]:
                         corresponding_last_name=register["RP"].split(",")[0]
                 for au in author_list:
+                    entry={}
+                    entry["first_names"]=""
+                    entry["national_id"]=""
+                    entry["last_names"]=""
+                    entry["initials"]=""
+                    entry["full_name"]=""
+                    entry["aliases"]=[]
+                    entry["affiliations"]=[]
+                    entry["keywords"]=[]
+                    entry["external_ids"]=[]
+                    entry["corresponding"]=False
+                    entry["corresponding_address"]=""
+                    entry["corresponding_email"]=""
                     raw_name=au.split(", ")
                     if len(raw_name)==1:
                         names=raw_name[0].capitalize()
@@ -248,28 +233,28 @@ class WebOfScience():
                     else:
                         names=raw_name[1].capitalize()
                         last_names=raw_name[0].capitalize()
-                    initials="".join([i[0].upper() for i in names.split(" ")])
-                    entry={
-                        'full_name':names+" "+last_names,
-                        'first_names':names,
-                        'last_names':last_names,
-                        'initials':initials
-                    }
+
+                    entry["full_name"]=names+" "+last_names
+                    entry["first_names"]=names
+                    entry["last_names"]=last_names
+                    entry["initials"]="".join([i[0].upper() for i in names.split(" ")])
                     #Checking if there is an external id
                     entry_ext=[]
                     for res in researchid_list:
                         try:
                             name,rid=res.split("/")
-                        except:
-                            continue
+                        except Exception as e:
+                            print("Could not split name and id in researchid field on ",register["doi_idx"])
+                            print(e)
                         if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
                             entry_ext.append({"source":"researchid","value":rid})
                             break
                     for res in orcid_list:
                         try:
                             name,oid=res.split("/")
-                        except:
-                            continue
+                        except Exception as e:
+                            print("Could not split name and id in orcid field on ",register["doi_idx"])
+                            print(e)
                         if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
                             entry_ext.append({"source":"orcid","value":oid})
                             break
@@ -281,13 +266,6 @@ class WebOfScience():
                             if "EM" in register.keys():
                                 if register["EM"] and register["EM"]==register["EM"]:
                                     entry["corresponding_email"]=register["EM"].rstrip()
-                                else:
-                                    entry["corresponding_email"]=""
-                            else:
-                                entry["corresponding_email"]=""
-                        else:
-                            entry["corresponding"]=""
-                            entry["corresponding_email"]=""
                     authors.append(entry)
                 if len(authors)==1:
                     authors[0]["corresponding"]=True
@@ -390,6 +368,13 @@ class WebOfScience():
            Information of the source in the CoLav standard format
         """
         source={}
+        source["title"]=""
+        source["serials"]=[]
+        source["abbreviations"]=[]
+        source["publisher"]=""
+        source["country"]=""
+        source["subjects"]={}
+
         if "SO" in register.keys():
             if register["SO"]:
                 source["title"]=register["SO"].rstrip()
@@ -402,7 +387,7 @@ class WebOfScience():
         if "PU" in register.keys():
             if register["PU"]:
                 source["publisher"]=register["PU"].rstrip()
-        source["serials"]=[]
+
         if "SN" in register.keys():
             if register["SN"]:
                 entry={"type":"pissn","value":register["SN"].rstrip().replace("-","")}
@@ -415,7 +400,7 @@ class WebOfScience():
             if register["BN"]:
                 entry={"type":"isbn","value":register["BN"].rstrip().replace("-","")}
                 source["serials"].append(entry)
-        source["abbreviations"]=[]
+
         if "J9" in register.keys():
             if register["J9"]:
                 entry={"type":"char","value":register["J9"].rstrip()}

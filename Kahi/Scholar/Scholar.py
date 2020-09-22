@@ -12,6 +12,35 @@ class Scholar():
 
     def parse_document(self,reg):
         data={}
+        data["updated"]=int(time())
+        data["source_checked"]=[{"source":"scholar","ts":int(time())}]
+        data["publication_type"]=""
+        data["titles"]=[]
+        data["subtitle"]=""
+        data["abstract"]=""
+        data["abstract_idx"]=""
+        data["keywords"]=[]
+        data["start_page"]=""
+        data["end_page"]=""
+        data["volume"]=""
+        data["issue"]=""
+        data["date_published"]=""
+        data["year_published"]=""
+        data["languages"]=[]
+        data["references_count"]=""
+        data["references"]=[]
+        data["citations_count"]=""
+        data["citations_link"]=""
+        data["citations"]=[]
+        data["funding_details"]=""
+        data["is_open_access"]=""
+        data["access_status"]=""
+        data["external_ids"]=[]
+        data["urls"]=[]
+        data["source"]=""
+        data["author_count"]=""
+        data["authors"]=[]
+        
         data["citations_count"]=int(reg["cites"]) if "cites" in reg.keys() else 0
         data["citations_link"]=reg["cites_link"] if "cites_link" in reg.keys() else ""
         data["external_ids"]=[{"source":"scholar","id":reg["cid"]}] if "cid" in reg.keys() else []
