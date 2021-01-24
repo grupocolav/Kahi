@@ -9,7 +9,7 @@
     "updated":<int>,
     "source_checked":[{
         "source":<str>,
-        "ts":<int>
+        "date":<int>
     }]
     "publication_type":<str>,
     "titles":[
@@ -32,7 +32,7 @@
     "funding_organization":<str>,
     "funding_details":<list of str>,
     "is_open_access":<bool>,
-    "access_status":<str>,
+    "open_access_status":<str>,
     "external_ids":[
         {
             "source":<str>,
@@ -45,7 +45,7 @@
             "url":<str>
         }
     ],
-    "source":<internal id>-
+    "source":<internal id>
     "author_count":<int>,
     "authors":[
         {
@@ -55,11 +55,7 @@
                 {
                     "id":<internal id>,
                     "branch":[
-                        {
-                            "type": <str>, #grupo
-                            "name": <str>, #meteorlogía
-                            "external_links": <str>
-                        }
+                        "id":<internal id>
                     ]
                 }
             ]
@@ -90,6 +86,7 @@
     "initials":<str>,
     "aliases":<List of str>,
     "affiliations":<list of internal ids>,
+    "branches":<list of internal ids from branches collection>
     "keywords":<list of str>,
     "external_ids":[
         {
@@ -105,7 +102,7 @@
     "_id":<internal id>,
     "name":<str>,
     "aliases":<List of str>,
-    "abbvreviations":<list of str>,
+    "abbreviations":<list of str>,
     "types":<list of str>, #Education,nonprofit,government,facilty,healthcare,company
     "relationships":[
         "id":<internal id>,
@@ -128,19 +125,71 @@
     "external_ids":[
         {
             "source":<str>,
-            "id":<str>
+            "value":<str>
         }
     ]
+}
+
+#branches collection
+{
+    "_id":<internal id>,
+    "name":"str",
+    "aliases":<list of str>,
+    "abbreviations":<list of str>,
+    "type":<str> #group, faculty, department, area, etc.
+    "relations":[
+        {
+            "type":<str>, #type of relations
+            "name": <str>
+            "collection":<str>, #determines if it is a branch an author, an institution or a source
+            "id":<internal id>
+        }
+    ]
+    "addresses":[
+        {
+            "country":<str>,
+            "state":<str>,
+            "city":<str>,... other possible fields
+        }
+    ],   
+    "external_urls":[
+        {
+            "source":<str>,
+            "url":<str>
+        }
+    ],
+    "external_ids":[
+        {
+            "source":<str>,
+            "id":<str>
+        }
 }
 
 
 #source collection
 {
     "_id":<internal id>,
+    "updated":<int>,
+    "source_checked":[{
+        "source":<str>,
+        "date":<int>
+    }]
     "title":<str>,
+    "title_idx":<str>,
     "type":<str>,
     "publisher":<str>,
-    "serial":[
+    "publisher_idx":<str>,
+    "institution":<str>,
+    "institution_id":<internal id>,
+    "country":<str>,
+    "editorial_review":<str>,
+    "submission_charges":<float>,
+    "submission_charges_url": <str>,
+    "submission_currency":<str>, #currency ticker
+    "apc_charges":<float>,
+    "apc_currency":<str>,
+    "apc_url":<str>,
+    "serials":[
         {
             "type":<str>,
             "value":<str>
@@ -151,8 +200,7 @@
             "type":<str>,
             "value":<str>
         }
-    ]
-    "country":<str>,
+    ],
     "subjects":{
         "source":<str>,
         "subjects":[
@@ -161,5 +209,10 @@
                 "subject":<str>
             }
         ]
-    }
+    },
+    "keywords":<list of str>,
+    "languages":<list of str>,
+    "plagiarism_detection":<bool>,
+    "active":<bool>,
+    "publication_time":<int>
 }

@@ -10,19 +10,89 @@ class Doaj():
         pass
 
     def parse_source(self,reg):
+        if "bibjson" in reg.keys():
+            reg=reg["bibjson"]
         source={}
+        source["updated"]=int(time())
+        source["source_checked"]=[{"source":"doaj","ts":int(time())}]
+        source["title"]=""
+        source["title_idx"]=""
+        source["type"]=""
+        source["publisher"]=""
+        source["publisher_idx"]=""
+        source["institution"]=""
+        source["institution_id"]=""
+        source["external_urls"]=[]
+        source["country"]=""
+        source["editorial_review"]=""
+        source["submission_charges"]=""
+        source["submission_charges_url"]=""
+        source["submmission_currency"]=""
+        source["apc_charges"]=""
+        source["apc_currency"]=""
+        source["apc_url"]=""
+        source["serials"]=[]
+        source["abbreviations"]=[]
+        source["aliases"]=[]
+        source["subjects"]=[]
+        source["keywords"]=[]
+        source["author_copyright"]=""
+        source["license"]=[]
+        source["languages"]=[]
+        source["plagiarism_detection"]=""
+        source["active"]=""
+        source["publication_time"]=""
+        source["deposit_policies"]=[]
+
+        
+        if "country" in reg.keys():
+            source["country"]=reg["country"]
+        if "subject" in reg.keys():
+            source["subjects"]=reg["subject"]
+        if "keywords" in reg.keys():
+            source["keywords"]=reg["keywords"]
+        if "link" in reg.keys():
+            source["external_urls"]=reg["link"]
+        if "language" in reg.keys():
+            source["languages"]=reg["language"]
+        if "title" in reg.keys():
+            source["title"]=reg["title"]
+        source["title_idx"]=source["title"].lower()
+        if "plagiarism_detection" in reg.keys():
+            source["plagiarism_detection"]=reg["plagiarism_detection"]["detection"]
+        if "institution" in reg.keys(): #The institution id is linked in the kahi class
+            source["institution"]=reg["institution"]
+        if "editorial_review" in reg.keys():
+            source["editorial_review"]=reg["editorial_review"]["process"]
+        if "deposit_policy" in reg.keys():
+            source["deposit_policies"]=reg["deposit_policy"]
+        if "identifier" in reg.keys():
+            for idx in reg["identifier"]:
+                source["serials"].append({"type":idx["type"],"value":idx["id"].replace("-","")})
+        if "active" in reg.keys():
+            source["active"]=reg["active"]
+        if "author_copyright" in reg.keys():
+            source["author_copyright"]=reg["author_copyright"]["copyright"]
+        if "publisher" in reg.keys():
+            source["publisher"]=reg["publisher"]
+        source["publisher_idx"]=source["publisher"].lower()
+        if "publication_time" in reg.keys():
+            source["publication_time"]=reg["publication_time"]
+        if "license" in reg.keys():
+            source["license"]=reg["license"]
+        if "alternative_title" in reg.keys():
+            source["aliases"].append(reg["alternative_title"])
         if "submission_charges" in reg.keys():
-            source["submission_charges"]=reg["submission_charges"]["average_price"] if "average_price" in reg["submission_charges"].keys() else ""
-            source["submission_currency"]=reg["submission_charges"]["currency"] if "currency" in reg["submission_charges"].keys() else ""
-        else:
-            source["submission_charges"]=""
-            source["submission_currency"]=""
+            if "average_price" in reg["submission_charges"].keys():
+                source["submission_charges"]=reg["submission_charges"]["average_price"]
+            if "currency" in reg["submission_charges"].keys():
+                source["submission_currency"]=reg["submission_charges"]["currency"]
         if "apc" in reg.keys():
-            source["apc_charges"]=reg["apc"]["average_price"] if "average_price" in reg["apc"].keys() else ""
-            source["apc_currency"]=reg["apc"]["currency"] if "currency" in reg["apc"].keys() else ""
-        else:
-            source["apc_charges"]=""
-            source["apc_currency"]=""
+            if "average_price" in reg["apc"].keys():
+                source["apc_charges"]=reg["apc"]["average_price"]
+            if "currency" in reg["apc"].keys():
+                source["apc_currency"]=reg["apc"]["currency"]
+
 
         return source
     

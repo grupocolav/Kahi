@@ -5,6 +5,7 @@ import iso639
 from fuzzywuzzy import fuzz,process
 from re import split,UNICODE
 from geotext import GeoText
+from langid import classify
 
 class Scopus():
     def __init__(self):
@@ -35,6 +36,7 @@ class Scopus():
         data["subtitle"]=""
         data["abstract"]=""
         data["abstract_idx"]=""
+        data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
         data["end_page"]=""
@@ -48,9 +50,10 @@ class Scopus():
         data["citations_count"]=""
         data["citations"]=[]
         data["citations_link"]=""
+        data["funding_organization"]=""
         data["funding_details"]=""
         data["is_open_access"]=""
-        data["access_status"]=""
+        data["open_access_status"]=""
         data["external_ids"]=[]
         data["urls"]=[]
         data["source"]=""
@@ -59,7 +62,9 @@ class Scopus():
 
 
         if "Title" in reg.keys():
-            data["title"]=reg["Title"]
+            title=reg["Title"]
+            lang=classify(title)
+            data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
         if "Year" in reg.keys(): data["year_published"]=reg["Year"]
         if "Volume" in reg.keys(): 
             if reg["Volume"] and reg["Volume"]==reg["Volume"]:
@@ -152,6 +157,62 @@ class Scopus():
 
         return data
 
+    def check_country(self,country):
+        """
+        Transforms the name of a country (given by a scopus register) in its alpha2 code
+
+        Parameters
+        ----------
+        country : str
+           Name fo the country as given by a scopus register
+        
+        Returns
+        -------
+        country_code : str
+            Uppercase alpha2 country code
+        """
+        if country=="United Kingdom":
+            country_alpha2="GB"
+        elif country.lower()=="venezuela":
+            country_alpha2='VE'
+        elif country.lower()=="united states":
+            country_alpha2='US'
+        elif country.lower()=="czech republic":
+            country_alpha2="CZ"
+        elif country.lower()=="vietnam":
+            country_alpha2="VN"
+        elif country.lower()=="russia":
+            country_alpha2="RU"
+        elif country.lower()=="peoples r china":
+            country_alpha2="CN"
+        elif country.lower()=="scotland":
+            country_alpha2="GB"
+        elif country.lower()=="iran":
+            country_alpha2="IR"
+        elif country.lower()=="south korea":
+            country_alpha2="KR"
+        elif country.lower()=="u arab emirates":
+            country_alpha2="AE"
+        elif country.lower()=="dem rep congo":
+            country_alpha2="CD"
+        elif country.lower()=="tanzania":
+            country_alpha2="TZ"
+        elif country.lower()=="taiwan":
+            country_alpha2="TW"
+        elif country.lower()=="wales":
+            country_alpha2="GB"
+        elif country.lower()=="micronesia":
+            country_alpha2="FM"
+        elif country.lower()=="reunion":
+            return ""
+        else:
+            try:
+                country_alpha2=country=iso3166.countries_by_name.get(country.upper()).alpha2
+            except:
+                #print("Could not parse: ",country)
+                country_alpha2=""
+        return country_alpha2
+
     def parse_authors(self,reg):
         """
         Transforms the raw register author information from Scopus in the CoLav standard.
@@ -239,9 +300,148 @@ class Scopus():
 
         return authors
 
+
+    def parse_authors_institutions(self,reg):
+        """
+        Transforms the raw register author and institution information from Scopus in the CoLav standard.
+
+        Parameters
+        ----------
+        register : dict
+           Register in Scopus format
+        
+        Returns
+        -------
+        authors : list
+            Information of the authors with affiliated institutions in the CoLav standard format
+        """
+        authors=[]
+        ids=None
+        corresponding_author=""
+        corresponding_address=""
+        corresponding_email=""
+        if "Correspondence Address" in reg.keys():
+            if reg["Correspondence Address"] and reg["Correspondence Address"]==reg["Correspondence Address"]:
+                corresponding_list=reg["Correspondence Address"].split("; ")
+                if len(corresponding_list)>0: corresponding_author=corresponding_list[0]
+                if len(corresponding_list)>1: corresponding_address=corresponding_list[1]
+                if len(corresponding_list)>2: corresponding_email=corresponding_list[2]
+        
+        if "Author(s) ID" in reg.keys(): ids=reg["Author(s) ID"].split(";")
+
+        inst=[]
+        if "Authors with affiliations" in reg.keys():
+            if reg["Authors with affiliations"] and reg["Authors with affiliations"]==reg["Authors with affiliations"]:
+                
+                if "Author(s) ID" in reg.keys():
+                    ids=reg["Author(s) ID"].split(";")
+
+                auwaf_list=reg["Authors with affiliations"].split("; ")
+                for i in range(len(auwaf_list)):
+
+                    no_corresponding=True
+                    entry={}
+                    entry["first_names"]=""
+                    entry["national_id"]=""
+                    entry["last_names"]=""
+                    entry["initials"]=""
+                    entry["full_name"]=""
+                    entry["aliases"]=[]
+                    entry["affiliations"]=[]
+                    entry["keywords"]=[]
+                    entry["external_ids"]=[]
+                    entry["corresponding"]=False
+                    entry["corresponding_address"]=""
+                    entry["corresponding_email"]=""
+
+                    auaf=split('(^[\w\-\s\.]+,\s+[\w\s\.\-]+,\s)',auwaf_list[i],UNICODE)
+                    if len(auaf)==1:
+                        author=auaf[0]
+                        affiliations=""
+                    else:
+                        author=auaf[1]
+                        affiliations=auaf[-1]
+                    countries=GeoText(affiliations).countries
+                    for country in countries[:-1]:
+                        country_affiliation_list=affiliations.split(country+', ')
+                        country_alpha2 = self.check_country(country)
+                        entry_aff={"name":country_affiliation_list[0]+country,
+                                "abbreviations":[],
+                                "aliases":[]
+                                "external_ids":[],
+                                "types":[],
+                                "relationships":[],
+                                "addresses":[{"country":country_alpha2}]
+                                "external_urls":[]}
+                        entry["affiliations"].append(entry_aff)
+                        inst.append({"name":country_affiliation_list[0]+country,"author":author,"countries":country_alpha2})
+                        affiliations=country_affiliation_list[-1] #what is left
+                    try:
+                        #print(i,countries[-1])
+                        country_alpha2 = self.check_country(countries[-1])
+                    except:
+                        #print("Could not parse country")
+                        country_alpha2=""
+                    
+                    entry_aff={"name":affiliations,
+                                "aliases":[],
+                                "abbreviations":"",
+                                "addresses":[{"country":country_alpha2}],
+                                "external_ids":[],
+                                "types":[],
+                                "relationships":[],
+                                "external_urls":[]}
+                    entry["affiliations"].append(entry_aff)
+                    inst.append({"name":affiliations,"author":author,"countries":country_alpha2})
+
+                    #Author name section
+                    try:
+                        entry["full_name"]=author.replace("-"," ").strip()
+                        entry["last_names"]=author.split(" ")[0].replace(",","").replace("-"," ").strip()
+                        entry["initials"]=author.strip().split(" ")[-1].replace(".","").replace(",","")
+                        alias=author.strip().lower()
+                        if alias[-1]==",":
+                            alias=alias[:-1]
+                        entry["aliases"].append(alias)
+                    except Exception as e:
+                        print("Could not parse author name in ",reg["doi_idx"])
+                        print(e)
+                    if corresponding_author:
+                        #print(author,corresponding_author)
+                        rate=fuzz.partial_ratio(author,corresponding_author)
+                        if rate>90:
+                            entry["corresponding"]=True
+                            entry["corresponding_address"]=corresponding_address
+                            entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                            no_corresponding=False
+                        elif rate>50:
+                            rate=fuzz.token_set_ratio(author,corresponding_author)
+                            if rate>90:
+                                entry["corresponding"]=True
+                                entry["corresponding_address"]=corresponding_address
+                                entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                            elif rate>50:
+                                rate=fuzz.partial_token_set_ratio(author,corresponding_author)
+                                if rate>90:
+                                    entry["corresponding"]=True
+                                    entry["corresponding_address"]=corresponding_address
+                                    entry["corresponding_email"]=corresponding_email.replace("email: ","")
+                    if ids:
+                        try:
+                            entry["external_ids"]=[{"source":"scopus","value":ids[i]}]
+                        except Exception as e:
+                            print("Could not parse author scopus id in ",reg["doi_idx"])
+                            print(e)
+                    authors.append(entry)
+                if len(authors)==1:
+                    authors[0]["corresponding"]=True
+                    
+
+        return authors
+
     def parse_institutions(self,reg):
         """
-        Transforms the raw register institution informatio from Scopus in the CoLav standard.
+        Transforms the raw register institution information from Scopus in the CoLav standard.
 
         Parameters
         ----------
@@ -268,123 +468,25 @@ class Scopus():
                     countries=GeoText(affiliations).countries
                     for country in countries[:-1]:
                         country_affiliation_list=affiliations.split(country+', ')
-                        if country=="United Kingdom":
-                            country_alpha2="GB"
-                        elif country.lower()=="venezuela":
-                            country_alpha2='VE'
-                        elif country.lower()=="united states":
-                            country_alpha2='US'
-                        elif country.lower()=="czech republic":
-                            country_alpha2="CZ"
-                        elif country.lower()=="vietnam":
-                            country_alpha2="VN"
-                        elif country.lower()=="russia":
-                            country_alpha2="RU"
-                        elif country.lower()=="peoples r china":
-                            country_alpha2="CN"
-                        elif country.lower()=="scotland":
-                            country_alpha2="GB"
-                        elif country.lower()=="iran":
-                            country_alpha2="IR"
-                        elif country.lower()=="south korea":
-                            country_alpha2="KR"
-                        elif country.lower()=="u arab emirates":
-                            country_alpha2="AE"
-                        elif country.lower()=="dem rep congo":
-                            country_alpha2="CD"
-                        elif country.lower()=="tanzania":
-                            country_alpha2="TZ"
-                        elif country.lower()=="taiwan":
-                            country_alpha2="TW"
-                        elif country.lower()=="wales":
-                            country_alpha2="GB"
-                        elif country.lower()=="micronesia":
-                            country_alpha2="FM"
-                        elif country.lower()=="reunion":
-                            continue
-                        else:
-                            try:
-                                country_alpha2=country=iso3166.countries_by_name.get(country.upper()).alpha2
-                            except:
-                                #print("Could not parse: ",country)
-                                country_alpha2=""
+                        country_alpha2 = self.check_country(country)
                         inst.append({"name":country_affiliation_list[0]+country,"author":author,"countries":country_alpha2})
                         affiliations=country_affiliation_list[-1] #what is left
                     try:
-                        #print(i,countries[-1])
-                        if countries[-1].lower()=="united kingdom":
-                            country_alpha2="GB"
-                        elif countries[-1].lower()=="venezuela":
-                            country_alpha2='VE'
-                        elif countries[-1].lower()=="united states":
-                            country_alpha2='US'
-                        elif countries[-1].lower()=="czech republic":
-                            country_alpha2="CZ"
-                        elif countries[-1].lower()=="vietnam":
-                            country_alpha2="VN"
-                        elif countries[-1].lower()=="russia":
-                            country_alpha2="RU"
-                        elif countries[-1].lower()=="peoples r china":
-                            country_alpha2="CN"
-                        elif countries[-1].lower()=="scotland":
-                            country_alpha2="GB"
-                        elif countries[-1].lower()=="iran":
-                            country_alpha2="IR"
-                        elif countries[-1].lower()=="south korea":
-                            country_alpha2="KR"
-                        elif countries[-1].lower()=="u arab emirates":
-                            country_alpha2="AE"
-                        elif countries[-1].lower()=="dem rep congo":
-                            country_alpha2="CD"
-                        elif countries[-1].lower()=="tanzania":
-                            country_alpha2="TZ"
-                        elif countries[-1].lower()=="taiwan":
-                            country_alpha2="TW"
-                        elif countries[-1].lower()=="wales":
-                            country_alpha2="GB"
-                        elif countries[-1].lower()=="micronesia":
-                            country_alpha2="FM"
-                        else:
-                            country_alpha2=country=iso3166.countries_by_name.get(countries[-1].upper()).alpha2
+                        country_alpha2 = self.check_country(countries[-1])
                     except:
                         #print("Could not parse country")
                         country_alpha2=""
                     inst.append({"name":affiliations,"author":author,"countries":country_alpha2})
-                    """if len(auaf)==1:
-                        auaf=auwaf_list[i].split(".")
-                        try:
-                            fullname=auaf[1]
-                        except:
-                            try:
-                                fullname=auaf[0]
-                            except:
-                                continue
-                    else:
-                        try:
-                            fullname=auaf[1]
-                        except:
-                            continue
-                    countries=[]
-                    for name in fullname.split(", "):
-                        match,rating=process.extractOne(name,country_list,scorer=fuzz.ratio)
-                        if rating>90:
-                            try:
-                                countries.append(iso3166.countries_by_name.get(name.upper()).alpha2)
-                            except:
-                                countries.append("")
-                        elif "United Kingdom" in name:
-                            countries.append("GB")
-                    inst.append({"name":fullname,"author":affiliation,"countries":countries})"""
 
         return inst
 
     def parse_source(self,reg):
         """
         Transforms the raw register source information from Scopus in the CoLav standard.
-
+        
         Parameters
         ----------
-        register : dict
+        register: dict
            Register in Scopus format
         
         Returns
@@ -398,6 +500,10 @@ class Scopus():
         source["abbreviations"]=[]
         source["publisher"]=""
         source["country"]=""
+        source["submission_charges"]=""
+        source["submission_currency"]=""
+        source["apc_charges"]=""
+        source["apc_currency"]=""
         source["subjects"]={}
 
         if "Source title" in reg.keys():
@@ -439,8 +545,8 @@ class Scopus():
            Information of the source in the CoLav standard format
         """
         return (self.parse_document(register),
-                self.parse_authors(register),
-                self.parse_institutions(register),
+                self.parse_authors_institutions(register),
+                #self.parse_institutions(register),
                 self.parse_source(register))
         
         

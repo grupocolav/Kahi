@@ -11,6 +11,35 @@ class Oadoi():
 
     def parse_document(self,reg):
         data={}
+        data["updated"]=int(time())
+        data["source_checked"]=[{"source":"scholar","ts":int(time())}]
+        data["publication_type"]=""
+        data["titles"]=[]
+        data["subtitle"]=""
+        data["abstract"]=""
+        data["abstract_idx"]=""
+        data["keywords"]=[]
+        data["start_page"]=""
+        data["end_page"]=""
+        data["volume"]=""
+        data["issue"]=""
+        data["date_published"]=""
+        data["year_published"]=""
+        data["languages"]=[]
+        data["references_count"]=""
+        data["references"]=[]
+        data["citations_count"]=""
+        data["citations_link"]=""
+        data["citations"]=[]
+        data["funding_details"]=""
+        data["funding_organization"]=""
+        data["is_open_access"]=""
+        data["open_access_status"]=""
+        data["external_ids"]=[]
+        data["urls"]=[]
+        data["source"]=""
+        data["author_count"]=""
+        data["authors"]=[]
         data["is_open_access"]=reg["is_oa"] if "is_oa" in reg.keys() else 0
         data["open_access_status"]=reg["oa_status"] if "oa_status" in reg.keys() else ""
 

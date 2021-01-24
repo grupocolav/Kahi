@@ -32,6 +32,7 @@ class Lens():
         data["subtitle"]=""
         data["abstract"]=""
         data["abstract_idx"]=""
+        data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
         data["end_page"]=""
@@ -45,9 +46,10 @@ class Lens():
         data["citations_count"]=""
         data["citations"]=[]
         data["citations_link"]=""
+        data["funding_organization"]=""
         data["funding_details"]=""
         data["is_open_access"]=""
-        data["access_status"]=""
+        data["open_access_status"]=""
         data["external_ids"]=[]
         data["urls"]=[]
         data["source"]=""
@@ -59,7 +61,9 @@ class Lens():
             if reg["publication_type"] and reg["publication_type"]==reg["publication_type"]:
                 data["publication_type"]=reg["publication_type"].lower() #Names of types of publications?
         if "title" in reg.keys():
-            data["title"]=reg["title"]
+            title=reg["title"]
+            lang=classify(title)
+            data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
         if "abstract" in reg.keys():
             if reg["abstract"] and reg["abstract"]==reg["abstract"]:
                 data["abstract"]=reg["abstract"]
@@ -191,6 +195,62 @@ class Lens():
 
         return authors
 
+    def parse_authors_institutions(self,reg):
+        authors=[]
+        if "authors" in reg.keys():
+            for author in reg["authors"]:
+                entry={}
+                entry["first_names"]=""
+                entry["national_id"]=""
+                entry["last_names"]=""
+                entry["initials"]=""
+                entry["full_name"]=""
+                entry["aliases"]=[]
+                entry["affiliations"]=[]
+                entry["keywords"]=[]
+                entry["external_ids"]=[]
+                entry["corresponding"]=False
+                entry["corresponding_address"]=""
+                entry["corresponding_email"]=""
+                #Author info section
+                if "first_name" in author.keys():
+                    if author["first_name"]==author["first_name"]:
+                        entry["first_names"]=author["first_name"]
+                if "last_name" in author.keys():
+                    if author["last_name"]==author["last_name"]:
+                        entry["last_names"]=author["last_name"]
+                if "initials" in author.keys():
+                    entry["initials"]=author["initials"]
+                if entry["first_names"]:
+                    entry["full_name"]=entry["first_names"]+" "+entry["last_names"]
+                else:
+                    entry["full_name"]=entry["last_names"]
+                #Affiliations info section
+                if "affiliations" in author.keys():
+                    if author["affiliations"]:
+                        for aff in author["affiliations"]:
+                            aff_entry={}
+                            aff_entry["name"]=""
+                            aff_entry["aliases"]=""
+                            aff_entry["abbreviations"]=[]
+                            aff_entry["addresses"]=[]
+                            aff_entry["types"]=[]
+                            aff_entry["external_ids"]=[]
+                            aff_entry["external_urls"]=[]
+                            if "name" in aff.keys():
+                                aff_entry["name"]=aff["name"]
+                            if "grid" in aff.keys():
+                                aff_entry["external_ids"].append({"source":"grid","value":aff["grid"]["id"]})
+                                if "addresses" in aff["grid"].keys():
+                                    if "country_code" in aff["grid"]["addresses"][0].keys():
+                                        aff_entry["addresses"].append({"country":aff["grid"]["addresses"][0]["country_code"]})
+                            entry["affiliations"].append(aff_entry)
+                authors.append(entry)
+            if len(authors)==1:
+                authors[0]["corresponding"]=True
+
+        return authors
+
     def parse_institutions(self,reg):
         """
         Transforms the raw register institution informatio from Lens in the CoLav standard.
@@ -243,12 +303,31 @@ class Lens():
            Information of the source in the CoLav standard format
         """
         source={}
+        source["updated"]=""
+        source["source_checked"]=[]
         source["title"]=""
+        source["title_idx"]=""
+        source["type"]=""
+        source["publisher"]=""
+        source["publisher_idx"]=""
+        source["institution"]=""
+        source["institution_id"]=""
+        source["country"]=""
+        source["editorial_review"]=""
+        source["submission_charges"]=""
+        source["submission_charges_url"]=""
+        source["submmission_currency"]=""
+        source["apc_charges"]=""
+        source["apc_currency"]=""
+        source["apc_url"]=""
         source["serials"]=[]
         source["abbreviations"]=[]
-        source["publisher"]=""
-        source["country"]=""
-        source["subjects"]={}
+        source["subjects"]=[]
+        source["keywords"]=[]
+        source["languages"]=[]
+        source["plagiarism_detection"]=""
+        source["active"]=""
+        source["publication_time"]=""
 
         if "source" in reg.keys():
             if "title_full" in reg["source"].keys():
@@ -343,8 +422,8 @@ class Lens():
         else:
             reg=register
         return (self.parse_document(reg),
-                self.parse_authors(reg),
-                self.parse_institutions(reg),
+                self.parse_authors_institutions(reg),
+                #self.parse_institutions(reg),
                 self.parse_source(reg))
 
         return data

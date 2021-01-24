@@ -4,6 +4,7 @@ import iso3166
 import iso639
 import json
 from fuzzywuzzy import fuzz
+from langid import classify
 
 # TODO:
 # * Check how the email, orcidid and researcherid in the author information
@@ -41,6 +42,7 @@ class WebOfScience():
         data["subtitle"]=""
         data["abstract"]=""
         data["abstract_idx"]=""
+        data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
         data["end_page"]=""
@@ -54,9 +56,10 @@ class WebOfScience():
         data["citations_count"]=""
         data["citations"]=[]
         data["citations_link"]=""
+        data["funding_organization"]=""
         data["funding_details"]=""
         data["is_open_access"]=""
-        data["access_status"]=""
+        data["open_access_status"]=""
         data["external_ids"]=[]
         data["urls"]=[]
         data["source"]=""
@@ -97,20 +100,22 @@ class WebOfScience():
             
         if "TI" in register.keys():
             if register["TI"] and register["TI"]==register["TI"]:
-                data["title"]=register["TI"].rstrip()
+                title=register["TI"].strip()
+                lang=classify(title)
+                data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
         if "AB" in register.keys():
             if register["AB"] and register["AB"]==register["AB"]:
                 data["abstract"]=register["AB"].rstrip()
         if "BP" in register.keys():
             if register["BP"] and register["BP"]==register["BP"]:
                 try:
-                    data["start_page"]=int(register["BP"].rstrip())
+                    data["start_page"]=int(register["BP"])
                 except:
                     print("Could not transform start page to int")
         if "EP" in register.keys():
             if register["EP"] and register["EP"]==register["EP"]:
                 try:
-                    data["end_page"]=int(register["EP"].rstrip())
+                    data["end_page"]=int(register["EP"])
                 except:
                     print("Could not transform end page to int")
         if "VL" in register.keys():
@@ -246,18 +251,40 @@ class WebOfScience():
                         except Exception as e:
                             print("Could not split name and id in researchid field on ",register["doi_idx"])
                             print(e)
-                        if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
+                        ratio=fuzz.partial_ratio(name,last_names+", "+names)
+                        if ratio>90:
                             entry_ext.append({"source":"researchid","value":rid})
                             break
+                        elif ratio>50:
+                            ratio=fuzz.token_set_ratio(name,last_names+", "+names)
+                            if ratio>90:
+                                entry_ext.append({"source":"researchid","value":rid})
+                                break
+                            elif ratio>50:
+                                ratio=fuzz.partial_token_set_ratio(name,last_names+", "+names)
+                                if ratio>95:
+                                    entry_ext.append({"source":"researchid","value":rid})
+                                    break
                     for res in orcid_list:
                         try:
                             name,oid=res.split("/")
                         except Exception as e:
                             print("Could not split name and id in orcid field on ",register["doi_idx"])
                             print(e)
-                        if fuzz.partial_ratio(name,last_names+", "+names)>0.8:
+                        ratio=fuzz.partial_ratio(name,last_names+", "+names)
+                        if ratio>90:
                             entry_ext.append({"source":"orcid","value":oid})
                             break
+                        elif ratio>50:
+                            ratio=fuzz.token_set_ratio(name,last_names+", "+names)
+                            if ratio>90:
+                                entry_ext.append({"source":"orcid","value":oid})
+                                break
+                            elif ratio>50:
+                                ratio=fuzz.partial_token_set_ratio(name,last_names+", "+names)
+                                if ratio>95:
+                                    entry_ext.append({"source":"orcid","value":oid})
+                                    break
                     entry["external_ids"]=entry_ext
                     #Checking if is corresponding author
                     if corresponding_last_name:
@@ -269,6 +296,61 @@ class WebOfScience():
                     authors.append(entry)
                 if len(authors)==1:
                     authors[0]["corresponding"]=True
+        return authors
+
+    def parse_authors_institutions(self,register):
+        authors=[]
+        if "C1" in register.keys():
+            if register["C1"]:
+
+                corresponding_last_name=""
+                orcid_list=[]
+                researchid_list=[]
+                if "RI" in register.keys():
+                    if register["RI"] and register["RI"]==register["RI"]:
+                        researchid_list=register["RI"].rstrip().replace("; ",";").split(";")
+                if "OI" in register.keys():
+                    if register["OI"] and register["OI"]==register["OI"]:
+                        orcid_list=register["OI"].rstrip().replace("; ",";").split(";")
+                
+                institutions=self.parse_institutions(register)
+                raw_authors=self.parse_authors(register)
+                for author in raw_authors:
+                    author["affiliations"]=[]
+                    for institution in institutions:
+                        if institution["author"]=="":
+                            continue
+                        if fuzz.token_set_ratio(author["full_name"],institution["author"])>=80:
+                            inst=institution.copy()
+                            del(inst["author"])
+                            author["affiliations"].append(inst)
+                            break
+                    authors.append(author)
+                for institution in institutions: #searching empty institutions and append a false author
+                    if institution["author"]=="":
+                        entry={
+                            "full_name":"missing",
+                            "first_names":"",
+                            "last_names":"",
+                            "initials":"",
+                            "external_ids":[],
+                            "aliases":[],
+                            "corresponding":"",
+                            "corresponding_address":"",
+                            "corresponding_email":"",
+                            "updated":666,
+                            "affiliations":[institution]
+                        }
+                        authors.append(entry)
+            else:
+                authors = self.parse_authors(register)
+                return authors
+        else:
+            authors = self.parse_authors(register)
+            return authors
+
+        
+
         return authors
 
     def parse_institutions(self,register):
@@ -350,7 +432,17 @@ class WebOfScience():
                         country=""
                 for i in range(len(authors)):
                     author=authors[i] if authors else ""
-                    inst.append({"name":name,"countries":country,"author":author}) ##LAST PART OF aff HAS THE COUNTRY
+                    entry_aff={"name":name,
+                                "aliases":[],
+                                "abbreviations":[],
+                                "external_ids":[],
+                                "types":[],
+                                "relationships":[],
+                                "external_urls":[],
+                                "author":author,
+                                "addresses":[{"country":country}]
+                    }
+                    inst.append(entry_aff) ##LAST PART OF aff HAS THE COUNTRY
         return inst
 
     def parse_source(self,register):
@@ -373,6 +465,10 @@ class WebOfScience():
         source["abbreviations"]=[]
         source["publisher"]=""
         source["country"]=""
+        source["submission_charges"]=""
+        source["submission_currency"]=""
+        source["apc_charges"]=""
+        source["apc_currency"]=""
         source["subjects"]={}
 
         if "SO" in register.keys():
@@ -437,8 +533,8 @@ class WebOfScience():
         """
 
         return (self.parse_document(register),
-                self.parse_authors(register),
-                self.parse_institutions(register),
+                self.parse_authors_institutions(register),
+                #self.parse_institutions(register),
                 self.parse_source(register))
 
                         
