@@ -239,28 +239,6 @@ class KahiDb(KahiParser):
                 break
         return doaj
 
-    def find_source(self,serial):
-        '''
-        Find the source (right now only the journal) in the colav database
-
-        Parameters
-        ----------
-        serial : str
-            Journal identifier. Namely isss, pissn, eissn without dash separation
-        
-        Returns
-        -------
-        register : dict
-            The complete register of the source in colav db. If no register was found, returns None
-
-        '''
-        for serial in source["serials"]:
-            register=self.colavdb["sources"].find_one({"serials.value":serial})
-            if register:
-                return register
-        if not register:
-            return None
-
     def find_grid_institution(self,token):
         '''
         Finds the institution through a keyword or name by makig a request to the given URL
@@ -302,7 +280,6 @@ class KahiDb(KahiParser):
         Dict with the raw database name as a key and the register found as its value.
         If the register was not found, the entry is None
 
-
         '''
         doi=doi.lower()
         lens_register=None
@@ -337,7 +314,7 @@ class KahiDb(KahiParser):
         Returns
         -------
         List of dicts with the raw database name as a key and the register found as its value.
-        If the register was not found, the entry is None
+        If the register was not found, the entry is None.
 
 
         '''
@@ -361,7 +338,7 @@ class KahiDb(KahiParser):
         Returns
         -------
         List of tuples with the found registers in the order: lens, wos, scielo, scopus, scholar, oadoi
-        If the register was not found, the entry is None
+        If the register was not found, the entry is None.
 
         '''
         try:
@@ -402,7 +379,7 @@ class KahiDb(KahiParser):
         Returns
         -------
         Tuple with the found registers in the order: lens, wos, scielo, scopus, scholar, oadoi
-        If the register was not found, the entry is None
+        If the register was not found, the entry is None.
 
         '''
         registers=[]
@@ -443,7 +420,7 @@ class KahiDb(KahiParser):
         Returns
         -------
         List of tuples with the found registers in the order: lens, wos, scielo, scopus, scholar, oadoi
-        If the register was not found, the entry is None
+        If the register was not found, the entry is None.
 
         '''
         register_list=[]
@@ -468,7 +445,8 @@ class KahiDb(KahiParser):
         Returns
         -------
         List of tuples with the found registers in the order: lens, wos, scielo, scopus, scholar, oadoi
-        If the register was not found, the entry is None
+        If the register was not found, the entry is None.
+
         '''
         register_list=[]
         for register in self.client[db][collection].find():
@@ -482,7 +460,7 @@ class KahiDb(KahiParser):
                 register_list.append(self.find_one_similarity(register))
         return register_list
             
-    def find_author_institution(self,author_institution):
+    def link_author_institution(self,author_institution):
         '''
         Searches for the author and affiliations in CoLav database.
         TODO:
@@ -525,7 +503,7 @@ class KahiDb(KahiParser):
             affdb=None
             for id_ext in affiliation["external_ids"]: #try external_ids
                 idx=id_ext["value"]
-                affdb=self.db["institutions"].find_one({"$or":[{"external_ids.value":idx},{"id":idx}]})
+                affdb=self.db["institutions"].find_one({"external_ids.value":idx})
                 if affdb:
                     aff_found=True
                     break
@@ -547,10 +525,109 @@ class KahiDb(KahiParser):
 
         return author_institution
                         
+    def link_source(self,source):
+        '''
+        Find the source (right now only the journal) in the colav database
 
+        Parameters
+        ----------
+        source : dict
+            Full parsed and joined register
+        
+        Returns
+        -------
+        register : dict
+            The complete register of the source in colav db with the _id and modifications to be made.
+            If no register was found, returns the unmodified input register   
+
+        '''
+        register=None
+        for serial in source["serials"]:
+            register=self.db["sources"].find_one({"serials.value":serial["value"]})
+            if register:
+                break
+        if register:
+            source["_id"]=register["_id"]
+            mod={}
+            if not register["type"] and source["type"]:
+                mod["type"]=source["type"]
+            if not register["institution"] and source["institution"]:
+                mod["institution"]=source["institution"]
+            if not register["institution_id"]and (source["institution"] or register["institution"]):
+                if register["institution"]:
+                    institution=register["institution"]
+                elif source["institution"]:
+                    institution=source["institution"]
+                response=self.find_grid_institution(institution)
+                if response["number_of_results"]!=0:
+                    if response["items"][0]["score"]>0.8:
+                        gridid=response["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                        affdb=self.db["institutions"].find_one({"external_ids.value":gridid})
+                        if affdb:
+                            mod["institution"]=affdb["name"]
+                            mod["institution_id"]=affdb["_id"]
+            if not register["publisher"] and source["publisher"]:
+                mod["publisher"]=source["publisher"]
+                mod["publisher_idx"]=source["publisher_idx"]
+            if not register["country"] and source["country"]:
+                mod["country"]=source["country"]
+            #serials
+            serials_mod=register["serials"]
+            serials_modified=False
+            for serial in source["serials"]:
+                found=False
+                for reg_serial in register["serials"]:
+                    if reg_serial["value"]==serial["value"]:
+                        found=True
+                        # if the values are equal, check if the type is equal to update it if needed
+                        if reg_serial["type"]==serial["type"]:
+                            if not serial in serials_mod:
+                                serials_mod.append(serial)
+                            break
+                        elif serial["type"]!="unknown":
+                            entry={"type":serial["type"],"value":serial["value"]}
+                            if not entry in  serials_mod:
+                                serials_mod.append(entry)
+                            serials_modified=True
+                            break
+                if found==False:
+                    if not serial in  serials_mod:
+                        serials_mod.append(serial)
+                    serials_modified=True
+            #abbreviations
+            abb_mod=register["abbreviations"]
+            abb_modified=False
+            for abb in source["abbreviations"]:
+                found=False
+                for reg_abb in register["abbreviations"]:
+                    if reg_abb["value"]==abb["value"]:
+                        found=True
+                        # if the values are equal, check if the type is equal to update it if needed
+                        if reg_abb["type"]==abb["type"]:
+                            if not abb in abb_mod:
+                                abb_mod.append(abb)
+                            break
+                        elif abb["type"]!="unknown":
+                            entry={"type":abb["type"],"value":abb["value"]}
+                            if not entry in  abb_mod:
+                                abb_mod.append(entry)
+                            abb_modified=True
+                            break
+                if found==False:
+                    if not abb in  abb_mod:
+                        abb_mod.append(abb)
+                    abb_modified=True
+            if abb_modified:
+                mod["abbreviations"]=abb_mod
+            if serials_modified:
+                mod["serials"]=serials_mod
+            if mod:
+                mod["updated"]=int(time())
+                source["mod"]=mod
+        return source
     
     
-    def update_one(self,registry):
+    def insert_one(self,registry):
         pass
 
     def update_many(self,registry_list):

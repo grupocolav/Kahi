@@ -52,7 +52,9 @@ class Doaj():
         if "keywords" in reg.keys():
             source["keywords"]=reg["keywords"]
         if "link" in reg.keys():
-            source["external_urls"]=reg["link"]
+            for link in reg["link"]:
+                if link["type"]=="homepage":
+                    source["external_urls"].append({"source":"site","url":link["url"]})
         if "language" in reg.keys():
             source["languages"]=reg["language"]
         if "title" in reg.keys():

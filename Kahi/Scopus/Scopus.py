@@ -367,11 +367,11 @@ class Scopus():
                         country_alpha2 = self.check_country(country)
                         entry_aff={"name":country_affiliation_list[0]+country,
                                 "abbreviations":[],
-                                "aliases":[]
+                                "aliases":[],
                                 "external_ids":[],
                                 "types":[],
                                 "relationships":[],
-                                "addresses":[{"country":country_alpha2}]
+                                "addresses":[{"country":country_alpha2}],
                                 "external_urls":[]}
                         entry["affiliations"].append(entry_aff)
                         inst.append({"name":country_affiliation_list[0]+country,"author":author,"countries":country_alpha2})
