@@ -495,6 +495,59 @@ class KahiDb(KahiParser):
         if author_found:
             print("Found ",author["full_name"])
             author_institution["_id"]=author["_id"]
+            #author modifications section
+            mod={}
+            if not author_institution["first_names"] and author["first_names"]:
+                mod["first_names"]=author["first_names"]
+            if not author_institution["last_names"] and author["last_names"]:
+                mod["last_names"]=author["last_names"]
+            if not author_institution["initials"] and author["initials"]:
+                mod["initials"]=author["initials"]
+            alias_mod=author["aliases"]
+            alias_modified=False
+            for alias in author_institution["aliases"]:
+                if not alias in alias_mod:
+                    alias_mod.append(alias)
+                    alias_modified=True
+            if alias_modified:
+                mod["aliases"]=alias_mod
+            keywords_mod=author["keywords"]
+            keywords_modified=False
+            for keyword in author_institution["keywords"]:
+                if not keyword in keywords_mod:
+                    keywords_mod.append(keyword)
+                    keywords_modified=True
+            if keywords_modified:
+                mod["keywords"]=keywords_mod
+            ids_mod=author["external_ids"]
+            ids_modified=False
+            for idx in author_institution["external_ids"]:
+                found=False
+                for reg_idx in author["external_ids"]:
+                    if reg_idx["value"]==idx["value"]:
+                        found=True
+                        # if the values are equal, check if the type is equal to update it if needed
+                        if reg_idx["source"]==idx["source"]:
+                            if not idx in ids_mod:
+                                ids_mod.append(idx)
+                            break
+                        elif idx["source"]!="unknown":
+                            entry={"source":idx["source"],"value":idx["value"]}
+                            if not entry in  ids_mod:
+                                ids_mod.append(entry)
+                                ids_modified=True
+                            break
+                if found==False:
+                    if not idx in ids_mod:
+                        ids_mod.append(idx)
+                        ids_modified=True
+            if ids_modified:
+                mod["external_ids"]= ids_mod
+            if mod:
+                mod["updated"]=int(time())
+                author_institution["mod"]=mod
+            #END MODIFICATIONS SECTION
+
         
         #Searching for institutions
         for affiliation in author_institution["affiliations"]:
@@ -521,6 +574,89 @@ class KahiDb(KahiParser):
             if aff_found:
                 print("Affiliation found in institutions collection")
                 affiliation["_id"]=affdb["_id"]
+                #affiliations modification section
+                mod={}
+                #if not affiliation[""] and affdb[""]:
+                #    mod[""]=affdb[""]
+                alias_mod=affdb["aliases"]
+                alias_modified=False
+                for alias in affiliation["aliases"]:
+                    if not alias in alias_mod:
+                        alias_mod.append(alias)
+                        alias_modified=True
+                if alias_modified:
+                    mod["aliases"]=alias_mod
+                abb_mod=affdb["abbreviations"]
+                abb_modified=False
+                for abb in affiliation["abbreviations"]:
+                    if not abb in abb_mod:
+                        abb_mod.append(abb)
+                        abb_modified=True
+                if abb_modified:
+                    mod["abbreviations"]=abb_mod
+                types_mod=affdb["types"]
+                types_modified=False
+                for tp in affiliation["types"]:
+                    if not tp in types_mod:
+                        typess_mod.append(tp)
+                        types_modified=True
+                if types_modified:
+                    mod["types"]=types_mod
+
+                ids_mod=affdb["external_ids"]
+                ids_modified=False
+                for idx in affiliation["external_ids"]:
+                    found=False
+                    for reg_idx in affdb["external_ids"]:
+                        if reg_idx["value"]==idx["value"]:
+                            found=True
+                            # if the values are equal, check if the type is equal to update it if needed
+                            if reg_idx["source"]==idx["source"]:
+                                if not idx in ids_mod:
+                                    ids_mod.append(idx)
+                                break
+                            elif idx["source"]!="unknown":
+                                entry={"source":idx["source"],"value":idx["value"]}
+                                if not entry in  ids_mod:
+                                    ids_mod.append(entry)
+                                    ids_modified=True
+                                break
+                    if found==False:
+                        if not idx in ids_mod:
+                            ids_mod.append(idx)
+                            ids_modified=True
+                if ids_modified:
+                    mod["external_ids"]= ids_mod
+
+                url_mod=affdb["external_ids"]
+                url_modified=False
+                for idx in affiliation["external_urls"]:
+                    found=False
+                    for reg_idx in affdb["external_ids"]:
+                        if reg_idx["value"]==idx["value"]:
+                            found=True
+                            # if the values are equal, check if the type is equal to update it if needed
+                            if reg_idx["source"]==idx["source"]:
+                                if not idx in url_mod:
+                                    ids_mod.append(idx)
+                                break
+                            elif idx["source"]!="unknown":
+                                entry={"source":idx["source"],"value":idx["value"]}
+                                if not entry in  url_mod:
+                                    url_mod.append(entry)
+                                    url_modified=True
+                                break
+                    if found==False:
+                        if not idx in url_mod:
+                            url_mod.append(idx)
+                            url_modified=True
+                if url_modified:
+                    mod["external_ids"]= url_mod
+                
+                if mod:
+                    mod["updated"]=int(time())
+                    affiliation["mod"]=mod
+                #END MODIFICATION SECTION
             
 
         return author_institution

@@ -71,20 +71,64 @@ class Kahi(KahiDb):
         self.articles.extend(self.find_many_similarity(data))
 
     def extract_from_collection(self,db,collection):
-        pass
+        '''
+        Search for the entities given a dataset in a mongo db collection.
+        Dataset must have the keys: doi, title, source and year.
+        The function searches the corresponding entity in the raw databases
+        even if the doi is not provided.
+
+        Parameters
+        ----------
+        db : str
+            Name of the mongodb database
+        collection : str
+            Name of the collection inside db which contains the data
+
+        Returns
+        -------
+        List of tuples with the found registers in the order: lens, wos, scielo, scopus, scholar, oadoi
+        If the register was not found, the entry is None.
+
+        '''
+        self.articles.extend(self.find_from_collection(db,collection))
 
 
     def transform(self):
         '''
         Transforms the data extracted in CoLav's format
         '''
-        pass
+        parsed=[]
+        for paper in self.articles_doi:
+            entry={}
+            entry["document"]=self.parse_document(paper)
+            entry["author_institutions"]=self.parse_authors_institutions(paper)
+            entry["source"]=self.parse_source(paper)
+            parsed.append(entry)
+        for paper in self.articles:
+            entry={}
+            entry["document"]=self.parse_document(paper)
+            entry["author_institutions"]=self.parse_authors_institutions(paper)
+            entry["source"]=self.parse_source(paper)
+            parsed.append(entry)
+        for paper in parsed:
+            entry={}
+            entry["document"]=self.join_document(paper["document"])
+            entry["author_institutions"]=self.join_authors_institutions(paper["author_institutions"])
+            entry["source"]=self.join_source(paper["source"])
+            self.transformed.append(entry)
+
 
     def link(self):
         '''
         Links the transformed data to existing registers in the database
         '''
-        pass
+        linked=[]
+        for paper in self.transformed:
+            entry={}
+            #entry["document"]=self.link_document(paper["document"])
+            entry["author_institutions"]=self.link_authors_institutions(paper["author_institutions"])
+            entry["source"]=self.link_source(paper["source"])
+        self.transformed=linked
 
     def load(self):
         '''
