@@ -689,19 +689,35 @@ class KahiDb(KahiParser):
                 mod["type"]=source["type"]
             if not register["institution"] and source["institution"]:
                 mod["institution"]=source["institution"]
-            if not register["institution_id"]and (source["institution"] or register["institution"]):
-                if register["institution"]:
-                    institution=register["institution"]
-                elif source["institution"]:
-                    institution=source["institution"]
-                response=self.find_grid_institution(institution)
-                if response["number_of_results"]!=0:
-                    if response["items"][0]["score"]>0.8:
-                        gridid=response["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
-                        affdb=self.db["institutions"].find_one({"external_ids.value":gridid})
-                        if affdb:
-                            mod["institution"]=affdb["name"]
-                            mod["institution_id"]=affdb["_id"]
+            if not "institution_id" in register.keys():
+                if (source["institution"] or register["institution"]):
+                    if register["institution"]:
+                        institution=register["institution"]
+                    elif source["institution"]:
+                        institution=source["institution"]
+                    response=self.find_grid_institution(institution)
+                    if response["number_of_results"]!=0:
+                        if response["items"][0]["score"]>0.8:
+                            gridid=response["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            affdb=self.db["institutions"].find_one({"external_ids.value":gridid})
+                            if affdb:
+                                mod["institution"]=affdb["name"]
+                                mod["institution_id"]=affdb["_id"]
+            else:
+                if not register["institution_id"] and (source["institution"] or register["institution"]):
+                    if register["institution"]:
+                        institution=register["institution"]
+                    elif source["institution"]:
+                        institution=source["institution"]
+                    response=self.find_grid_institution(institution)
+                    if response["number_of_results"]!=0:
+                        if response["items"][0]["score"]>0.8:
+                            gridid=response["items"][0]["organization"]["external_ids"]["GRID"]["preferred"]
+                            affdb=self.db["institutions"].find_one({"external_ids.value":gridid})
+                            if affdb:
+                                mod["institution"]=affdb["name"]
+                                mod["institution_id"]=affdb["_id"]
+                
             if not register["publisher"] and source["publisher"]:
                 mod["publisher"]=source["publisher"]
                 mod["publisher_idx"]=source["publisher_idx"]

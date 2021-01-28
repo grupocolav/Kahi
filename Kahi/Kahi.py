@@ -144,7 +144,7 @@ class Kahi(KahiDb):
                     response=self.db["sources"].update_one({"_id":paper["source"]["_id"]},{"$set":paper["source"]["mod"]})
             else:
                 result=self.db["sources"].insert_one(paper["source"])
-                paper["source"]["_id"]=result.inserted__id
+                paper["source"]["_id"]=result.inserted_id
             #removing all information but the id
             source_id=paper["source"]["_id"]
             paper["source"]={"_id":source_id}
@@ -157,7 +157,7 @@ class Kahi(KahiDb):
                             result=self.db["institutions"].update_one({"_id":aff["_id"]},{"$set":aff["mod"]})
                     else:#insert the affiliation and recover the id
                         result=self.db["institutions"].insert_one(aff)
-                        aff["_id"]=result.inserted__id
+                        aff["_id"]=result.inserted_id
                     #removing all information but the id
                     mongo_id=aff["_id"]
                     aff={"_id":mongo_id}
@@ -168,7 +168,7 @@ class Kahi(KahiDb):
                 else: #insert the author and recover the id
                     del(author["affiliations"])
                     result=self.db["authors"].insert_one(author)
-                    author["_id"]=result.inserted__id
+                    author["_id"]=result.inserted_id
                 #removing all information but the id
                 author_id=author["_id"]
                 author={"_id":author_id,"affiliations":affiliations}

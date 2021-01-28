@@ -462,6 +462,8 @@ class WebOfScience():
         source={}
         source["title"]=""
         source["serials"]=[]
+        source["institution"]=""
+        source["institution_id"]=""
         source["abbreviations"]=[]
         source["publisher"]=""
         source["country"]=""

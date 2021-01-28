@@ -121,6 +121,7 @@ class KahiParser():
         entry["type"]=""
         entry["publisher"]=""
         entry["institution"]=""
+        entry["institution_id"]=""
         entry["country"]=""
         entry["submission_charges"]=""
         entry["submission_currency"]=""
