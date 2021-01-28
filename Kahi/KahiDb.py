@@ -774,13 +774,66 @@ class KahiDb(KahiParser):
             if serials_modified:
                 mod["serials"]=serials_mod
             if mod:
+                mod["source_checked"]=register["source_checked"]
+                for source_checked in source["source_checked"]:
+                    found=False
+                    for reg_checked in mod["source_checked"]:
+                        if source_checked["source"]==reg_checked["source"]:
+                            found=True
+                            if source_checked["date"]>reg_checked["date"]:
+                                reg_checked["date"]=source_checked["date"]
+                    if found==False:
+                        mod["source_checked"].append(source_checked)
                 mod["updated"]=int(time())
                 source["mod"]=mod
         return source
     
     
-    def insert_one(self,registry):
-        pass
+    def insert_one(self,register):
+        #Source section
+        if "_id" in register["source"].keys():
+            if "mod" in register["source"].keys():
+                response=self.db["sources"].update_one({"_id":register["source"]["_id"]},{"$set":register["source"]["mod"]})
+        else:
+            result=self.db["sources"].insert_one(register["source"])
+            register["source"]["_id"]=result.inserted_id
+        #removing all information but the id
+        source_id=register["source"]["_id"]
+        register["source"]={"_id":source_id}
+
+        #author and affiliations section
+        authors=[]
+        for author in register["author_institutions"]:
+            affiliations=[]
+            for aff in author["affiliations"]:
+                if "_id" in aff.keys(): #modify whats is needed
+                    if "mod" in aff.keys():
+                        result=self.db["institutions"].update_one({"_id":aff["_id"]},{"$set":aff["mod"]})
+                else:#insert the affiliation and recover the id
+                    result=self.db["institutions"].insert_one(aff)
+                    aff["_id"]=result.inserted_id
+                #removing all information but the id
+                mongo_id=aff["_id"]
+                aff={"_id":mongo_id}
+                affiliations.append(aff)
+            if "_id" in author.keys(): #modify what's needed
+                if "mod" in author.keys():
+                    result=self.db["authors"].update_one({"_id":author["_id"]},{"$set":author["mod"]})
+            else: #insert the author and recover the id
+                del(author["affiliations"])
+                result=self.db["authors"].insert_one(author)
+                author["_id"]=result.inserted_id
+            #removing all information but the id
+            author_id=author["_id"]
+            author={"_id":author_id,"affiliations":affiliations}
+            authors.append(author)
+
+        register["author_institutions"]=authors
+        
+        #Building the complete document register
+        register["document"]["source"]=register["source"]
+        register["document"]["authors"]=register["author_institutions"]
+        result=self.db["documents"].insert_one(register["document"])
 
     def update_many(self,registry_list):
         pass

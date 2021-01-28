@@ -15,6 +15,7 @@ doi_list=["10.4034/pboci.2016.161.03",
         "10.1590/s1020-49892003000900003",
         "10.1016/j.infect.2014.03.001",
         "10.1016/j.aprim.2013.11.007"]
+
 etl.extract_doi(doi_list)
 print('------------------------')
 print('Starting Kahi ETL documents transformation')
