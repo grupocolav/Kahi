@@ -460,7 +460,7 @@ class KahiDb(KahiParser):
                 register_list.append(self.find_one_similarity(register))
         return register_list
             
-    def link_author_institution(self,author_institution):
+    def link_authors_institutions(self,author_institution):
         '''
         Searches for the author and affiliations in CoLav database.
         TODO:

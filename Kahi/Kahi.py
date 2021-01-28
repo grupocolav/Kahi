@@ -125,13 +125,56 @@ class Kahi(KahiDb):
         linked=[]
         for paper in self.transformed:
             entry={}
-            #entry["document"]=self.link_document(paper["document"])
-            entry["author_institutions"]=self.link_authors_institutions(paper["author_institutions"])
+            entry["author_institutions"]=[]
+            entry["document"]=paper["document"]
+            for author in entry["author_institutions"]:
+                entry["author_institutions"].append(self.link_authors_institutions(author))
             entry["source"]=self.link_source(paper["source"])
+            linked.append(entry)
         self.transformed=linked
 
     def load(self):
         '''
-        Loads the new registers (if needed) to the database
+        Loads the new registers to the databse and modify them if needed.
         '''
-        pass
+        for paper in self.transformed:
+            #Source section
+            if "_id" in paper["source"].keys():
+                if "mod" in paper["source"].keys():
+                    response=self.db["sources"].update_one({"_id":paper["source"]["_id"]},{"$set":paper["source"]["mod"]})
+            else:
+                result=self.db["sources"].insert_one(paper["source"])
+                paper["source"]["_id"]=result.inserted__id
+            #removing all information but the id
+            source_id=paper["source"]["_id"]
+            paper["source"]={"_id":source_id}
+
+            #author and affiliations section
+            for author in paper["author_institutions"]:
+                for aff in author["affiliations"]:
+                    if "_id" in aff.keys(): #modify whats is needed
+                        if "mod" in aff.keys():
+                            result=self.db["institutions"].update_one({"_id":aff["_id"]},{"$set":aff["mod"]})
+                    else:#insert the affiliation and recover the id
+                        result=self.db["institutions"].insert_one(aff)
+                        aff["_id"]=result.inserted__id
+                    #removing all information but the id
+                    mongo_id=aff["_id"]
+                    aff={"_id":mongo_id}
+                affiliations=author["affiliations"]
+                if "_id" in author.keys(): #modify what's needed
+                    if "mod" in author.keys():
+                        result=self.db["authors"].update_one({"_id":author["_id"]},{"$set":author["mod"]})
+                else: #insert the author and recover the id
+                    del(author["affiliations"])
+                    result=self.db["authors"].insert_one(author)
+                    author["_id"]=result.inserted__id
+                #removing all information but the id
+                author_id=author["_id"]
+                author={"_id":author_id,"affiliations":affiliations}
+            
+            #Building the complete document register
+            paper["document"]["source"]=paper["source"]
+            paper["document"]["authors"]=paper["author_institutions"]
+            result=self.db["documents"].insert_one(paper["document"])
+                
