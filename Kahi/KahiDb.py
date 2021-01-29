@@ -104,7 +104,7 @@ def colav_similarity(title1,title2,journal1,journal2,year1,year2,ratio_thold=90,
 #END OF HELPER FUNCTIONS SECTION
 
 class KahiDb(KahiParser):
-    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",n_jobs=8,verbose=5):
+    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=8,verbose=5):
         """
         Base class for Kahi. Includes methods to retrieve, compare, insert and update
         authors, institutions, documents and sources
@@ -136,7 +136,7 @@ class KahiDb(KahiParser):
         """
         super().__init__(verbose=verbose)
 
-        self.grid_url='https://api.ror.org/organizations?affiliation='
+        self.ror_url=ror_url
         self.client=MongoClient(dbserver_url,port)
         self.db=self.client[colav_db]
 
@@ -256,7 +256,7 @@ class KahiDb(KahiParser):
 
         '''
         query=urllib.parse.quote(token)
-        url='{}{}'.format(self.grid_url,query)
+        url='{}{}'.format(self.ror_url,query)
         res=requests.get(url)
         result={}
         try:
@@ -288,6 +288,10 @@ class KahiDb(KahiParser):
         scopus_register=None
         scholar_register=None
         oadoi_register=None
+
+        register_db=self.db["documents"].find_one({"external_ids.id":doi})
+        if register_db:
+            return None
 
         lens_register=self.lensdb[self.collection].find_one({"external_ids.value":doi})
         wos_register=self.wosdb[self.collection].find_one({"doi_idx":doi})
@@ -321,7 +325,7 @@ class KahiDb(KahiParser):
 
         register_list=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.find_one_doi)(doi) for doi in doi_list)
 
-        return register_list
+        return [reg for reg in register_list if reg]
     
 
     def find_doi_file(self,file,column):

@@ -87,6 +87,7 @@ class KahiParser():
     def author_empty(self):
         entry={}
         entry["national_id"]=""
+        entry["source_checked"]=[]
         entry["full_name"]=""
         entry["first_names"]=""
         entry["last_names"]=""
@@ -104,6 +105,7 @@ class KahiParser():
     def institution_empty(self):
         entry={}
         entry["name"]=""
+        entry["source_checked"]=[]
         entry["aliases"]=[]
         entry["abbreviations"]=[]
         entry["types"]=[]
@@ -763,6 +765,7 @@ class KahiParser():
             for i in range(author_count):
                 entry=self.author_empty()
 
+                entry["source_checked"].append({"source":"lens","date":int(time())})
                 entry["full_name"]=data["lens"][i]["full_name"] if "full_name" in data["lens"][i].keys() else ""
                 entry["first_names"]=data["lens"][i]["first_names"] if "first_names" in data["lens"][i].keys() else ""
                 entry["last_names"]=data["lens"][i]["last_names"] if "last_names" in data["lens"][i].keys() else ""
@@ -777,21 +780,25 @@ class KahiParser():
 
                 #Start of wos complement to lens
                 if data["wos"]:
+                    entry["source_checked"].append({"source":"wos","date":int(time())})
                     entry=self.find_complement(data["wos"],entry)
                 #end of wos compliment to lens
                 
                 #Start of scielo compliment to lens
                 if data["scielo"]:
+                    entry["source_checked"].append({"source":"scielo","date":int(time())})
                     entry=self.find_complement(data["scielo"],entry)
                 #end of scielo compliment to lens
 
                 #Start of scopus compliment to lens
                 if data["scopus"]:
+                    entry["source_checked"].append({"source":"scopus","date":int(time())})
                     entry=self.find_complement(data["scopus"],entry)
                 #end of scopus compliment to lens
 
                 #Start of scholar compliment to lens
                 if data["scholar"]:
+                    entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
                 #end of scholar compliment to lens
 
@@ -803,6 +810,7 @@ class KahiParser():
             for i in range(author_count):
                 entry=self.author_empty()
 
+                entry["source_checked"].append({"source":"wos","date":int(time())})
                 entry["full_name"]=data["wos"][i]["full_name"] if "full_name" in data["wos"][i].keys() else ""
                 entry["first_names"]=data["wos"][i]["first_names"] if "first_names" in data["wos"][i].keys() else ""
                 entry["last_names"]=data["wos"][i]["last_names"] if "last_names" in data["wos"][i].keys() else ""
@@ -822,10 +830,13 @@ class KahiParser():
                         entry["corresponding_address"]=data["wos"][i]["corresponding_address"]
                 
                 if data["scielo"]:
+                    entry["source_checked"].append({"source":"scielo","date":int(time())})
                     entry=self.find_complement(data["scielo"],entry)
                 if data["scopus"]:
+                    entry["source_checked"].append({"source":"scopus","date":int(time())})
                     entry=self.find_complement(data["scopus"],entry)
                 if data["scholar"]:
+                    entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
                 
                 entry["updated"]=updated      
@@ -836,6 +847,7 @@ class KahiParser():
             for i in range(author_count):
                 entry=self.author_empty()
 
+                entry["source_checked"].append({"source":"scielo","date":int(time())})
                 entry["full_name"]=data["scielo"][i]["full_name"] if "full_name" in data["scielo"][i].keys() else ""
                 entry["first_names"]=data["scielo"][i]["first_names"] if "first_names" in data["scielo"][i].keys() else ""
                 entry["last_names"]=data["scielo"][i]["last_names"] if "last_names" in data["scielo"][i].keys() else ""
@@ -855,8 +867,10 @@ class KahiParser():
                         entry["corresponding_address"]=data["scielo"][i]["corresponding_address"]
                 
                 if data["scopus"]:
+                    entry["source_checked"].append({"source":"scopus","date":int(time())})
                     entry=self.find_complement(data["scopus"],entry)
                 if data["scholar"]:
+                    entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
             
         elif data["scopus"]:
@@ -865,6 +879,7 @@ class KahiParser():
             for i in range(author_count):
                 entry=self.author_empty()
 
+                entry["source_checked"].append({"source":"scopus","date":int(time())})
                 entry["full_name"]=data["scopus"][i]["full_name"] if "full_name" in data["scopus"][i].keys() else ""
                 entry["first_names"]=data["scopus"][i]["first_names"] if "first_names" in data["scopus"][i].keys() else ""
                 entry["last_names"]=data["scopus"][i]["last_names"] if "last_names" in data["scopus"][i].keys() else ""
@@ -884,6 +899,7 @@ class KahiParser():
                         entry["corresponding_address"]=data["scopus"][i]["corresponding_address"]
                 
                 if data["scholar"]:
+                    entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
 
         return authors

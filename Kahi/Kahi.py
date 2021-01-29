@@ -14,11 +14,11 @@ from Kahi.KahiDb import KahiDb
 
 
 class Kahi(KahiDb):
-    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",n_jobs=8,verbose=0):
+    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=8,verbose=0):
         '''
         Class with the attributes and methods that will put the entire ETL process together
         '''
-        super().__init__(dbserver_url=dbserver_url,port=port,colav_db=colav_db,n_jobs=n_jobs,verbose=verbose)
+        super().__init__(dbserver_url=dbserver_url,port=port,colav_db=colav_db,ror_url=ror_url,n_jobs=n_jobs,verbose=verbose)
         
         self.articles_doi=[] #articles with dois
         self.articles=[] #articles without dois
@@ -36,7 +36,7 @@ class Kahi(KahiDb):
         data : list
             List of dois
         '''
-        self.articles_doi.extend(self.find_many_doi(data))
+        self.articles.extend(self.find_many_doi(data))
 
     def extract_from_doi_file(self,file,column):
         '''
@@ -55,7 +55,7 @@ class Kahi(KahiDb):
         If the register was not found, the entry is None
 
         '''
-        self.articles_doi.extend(self.find_doi_file(file,column))
+        self.articles.extend(self.find_doi_file(file,column))
 
     def extract_similarity(self,data):
         '''
@@ -98,12 +98,6 @@ class Kahi(KahiDb):
         Transforms the data extracted in CoLav's format
         '''
         parsed=[]
-        for paper in self.articles_doi:
-            entry={}
-            entry["document"]=self.parse_document(paper)
-            entry["author_institutions"]=self.parse_authors_institutions(paper)
-            entry["source"]=self.parse_source(paper)
-            parsed.append(entry)
         for paper in self.articles:
             entry={}
             entry["document"]=self.parse_document(paper)
@@ -117,6 +111,18 @@ class Kahi(KahiDb):
             entry["source"]=self.join_source(paper["source"])
             self.transformed.append(entry)
 
+    def transform_one(self,register):
+        entry={}
+        entry["document"]=self.parse_document(register)
+        entry["author_institutions"]=self.parse_authors_institutions(register)
+        entry["source"]=self.parse_source(register)
+        entry["document"]=self.join_document(entry["document"])
+        entry["author_institutions"]=self.join_authors_institutions(entry["author_institutions"])
+        entry["source"]=self.join_source(entry["source"])
+        return entry
+
+    def parallel_transform(self):
+        self.transformed=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.transform_one)(reg) for reg in self.articles)
 
     def link(self):
         '''
@@ -132,6 +138,20 @@ class Kahi(KahiDb):
             entry["source"]=self.link_source(paper["source"])
             linked.append(entry)
         self.transformed=linked
+
+    def link_one(self,register):
+        entry={}
+        entry["author_institutions"]=[]
+        entry["document"]=register["document"]
+        for author in register["author_institutions"]:
+            entry["author_institutions"].append(self.link_authors_institutions(author))
+        entry["source"]=self.link_source(register["source"])
+        
+        return entry
+    
+    def parallel_link(self):
+        result=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.link_one)(reg) for reg in self.transformed)
+        self.transformed=result
 
     def load(self):
         '''
