@@ -605,8 +605,8 @@ class KahiParser():
         document["is_open_access"]=""
         document["open_access_status"]=""
         if data["oadoi"]:
-            document["is_open_access"]= data["oadoi"]["is_open_access"] if "is_open_access" in oadoi.keys() else ""
-            document["open_access_status"]= data["oadoi"]["open_access_status"] if "open_access_status" in oadoi.keys() else ""
+            document["is_open_access"]= data["oadoi"]["is_open_access"] if "is_open_access" in data["oadoi"].keys() else ""
+            document["open_access_status"]= data["oadoi"]["open_access_status"] if "open_access_status" in data["oadoi"].keys() else ""
         
         #languages
         languages=[]
