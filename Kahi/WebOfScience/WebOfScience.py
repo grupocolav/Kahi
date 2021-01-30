@@ -205,10 +205,16 @@ class WebOfScience():
             researchid_list=[]
             if "RI" in register.keys():
                 if register["RI"] and register["RI"]==register["RI"]:
-                    researchid_list=register["RI"].rstrip().replace("; ",";").split(";")
+                    ri=register["RI"]
+                    if ri[-1]=="\n":
+                        ri=ri[:-1]
+                    researchid_list=ri.rstrip().replace("; ",";").split(";")
             if "OI" in register.keys():
                 if register["OI"] and register["OI"]==register["OI"]:
-                    orcid_list=register["OI"].rstrip().replace("; ",";").split(";")
+                    oi=register["OI"]
+                    if oi[-1]=="\n":
+                        oi=oi[:-1]
+                    orcid_list=oi.rstrip().replace("; ",";").split(";")
             if "AF" in register.keys():
                 author_list=register["AF"].rstrip().split("\n")
                 if "RP" in register.keys():
@@ -246,6 +252,8 @@ class WebOfScience():
                     #Checking if there is an external id
                     entry_ext=[]
                     for res in researchid_list:
+                        if not res:
+                            continue
                         try:
                             name,rid=res.split("/")
                         except Exception as e:
@@ -266,6 +274,8 @@ class WebOfScience():
                                     entry_ext.append({"source":"researchid","value":rid})
                                     break
                     for res in orcid_list:
+                        if not res:
+                            continue
                         try:
                             name,oid=res.split("/")
                         except Exception as e:

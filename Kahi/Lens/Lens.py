@@ -242,8 +242,9 @@ class Lens():
                             if "grid" in aff.keys():
                                 aff_entry["external_ids"].append({"source":"grid","value":aff["grid"]["id"]})
                                 if "addresses" in aff["grid"].keys():
-                                    if "country_code" in aff["grid"]["addresses"][0].keys():
-                                        aff_entry["addresses"].append({"country":aff["grid"]["addresses"][0]["country_code"]})
+                                    if aff["grid"]["addresses"]:
+                                        if "country_code" in aff["grid"]["addresses"][0].keys():
+                                            aff_entry["addresses"].append({"country":aff["grid"]["addresses"][0]["country_code"]})
                             entry["affiliations"].append(aff_entry)
                 authors.append(entry)
             if len(authors)==1:

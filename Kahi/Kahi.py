@@ -70,7 +70,7 @@ class Kahi(KahiDb):
         '''
         self.articles.extend(self.find_many_similarity(data))
 
-    def extract_from_collection(self,db,collection):
+    def extract_from_collection(self,db,collection,field):
         '''
         Search for the entities given a dataset in a mongo db collection.
         Dataset must have the keys: doi, title, source and year.
@@ -90,7 +90,7 @@ class Kahi(KahiDb):
         If the register was not found, the entry is None.
 
         '''
-        self.articles.extend(self.find_from_collection(db,collection))
+        self.articles.extend(self.find_from_collection(db,collection,field))
 
 
     def transform(self):

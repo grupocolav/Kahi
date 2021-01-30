@@ -432,7 +432,7 @@ class KahiDb(KahiParser):
             register_list.append(find_one_similarity(data))
         return register_list
 
-    def find_from_collection(self,db,collection):
+    def find_from_collection(self,db,collection,field):
         '''
         Search for the entities given a dataset in a mongo db collection.
         Dataset must have the keys: doi, title, source and year.
@@ -455,9 +455,9 @@ class KahiDb(KahiParser):
         register_list=[]
         for register in self.client[db][collection].find():
             doi=""
-            if "doi" in register.keys():
-                if register["doi"]:
-                    doi=register["doi"]
+            if field in register.keys():
+                if register[field]:
+                    doi=register[field]
             if doi:
                 register_list.append(self.find_one_doi(doi))
             else:
