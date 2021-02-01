@@ -255,7 +255,7 @@ class WebOfScience():
                         if not res:
                             continue
                         try:
-                            name,rid=res.split("/")
+                            name,rid=res.split("/")[-2:]
                         except Exception as e:
                             print("Could not split name and id in researchid field on ",register["doi_idx"])
                             print(e)
@@ -277,7 +277,7 @@ class WebOfScience():
                         if not res:
                             continue
                         try:
-                            name,oid=res.split("/")
+                            name,oid=res.split("/")[-2:]
                         except Exception as e:
                             print("Could not split name and id in orcid field on ",register["doi_idx"])
                             print(e)
