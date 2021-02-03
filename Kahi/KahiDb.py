@@ -463,6 +463,12 @@ class KahiDb(KahiParser):
             else:
                 register_list.append(self.find_one_similarity(register))
         return register_list
+
+    def get_doilist_from_collection(self,db,collection,field):
+        doilist=[]
+        for reg in self.client[db][collection].find({},{field:1}):
+            doilist.append(reg[field])
+        return doilist
             
     def link_authors_institutions(self,author_institution):
         '''
@@ -497,7 +503,7 @@ class KahiDb(KahiParser):
                     author_found=True
                     break
         if author_found:
-            print("Found ",author["full_name"])
+            if self.verbose==5: print("Found ",author["full_name"])
             author_institution["_id"]=author["_id"]
             #author modifications section
             mod={}
@@ -555,7 +561,7 @@ class KahiDb(KahiParser):
         
         #Searching for institutions
         for affiliation in author_institution["affiliations"]:
-            print("Searching ",affiliation["name"])
+            if self.verbose==5: print("Searching ",affiliation["name"])
             aff_found=False
             affdb=None
             for id_ext in affiliation["external_ids"]: #try external_ids
@@ -576,7 +582,7 @@ class KahiDb(KahiParser):
                                 aff_found=True
                                 break
             if aff_found:
-                print("Affiliation found in institutions collection")
+                if self.verbose==5: print("Affiliation found in institutions collection")
                 affiliation["_id"]=affdb["_id"]
                 #affiliations modification section
                 mod={}
@@ -838,6 +844,7 @@ class KahiDb(KahiParser):
         register["document"]["source"]=register["source"]
         register["document"]["authors"]=register["author_institutions"]
         result=self.db["documents"].insert_one(register["document"])
+        return result
 
     def update_many(self,registry_list):
         pass

@@ -159,4 +159,16 @@ class Kahi(KahiDb):
         '''
         for paper in self.transformed:
             self.insert_one(paper)
-                
+
+    def process_one(self,index):
+        data=self.find_one_doi(self.articles[index])
+        parsed=self.transform_one(data)
+        del(data)
+        linked=self.link_one(parsed)
+        del(parsed)
+        return self.insert_one(linked)
+
+    def parallel_all_from_collection(self,db,collection,field):
+        self.articles=self.get_doilist_from_collection(db,collection,field)
+        result=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.process_one)(i) for i in range(len(self.articles)))
+        self.status=result
