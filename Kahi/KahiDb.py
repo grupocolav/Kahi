@@ -258,6 +258,8 @@ class KahiDb(KahiParser):
         query=urllib.parse.quote(token)
         url='{}{}'.format(self.ror_url,query)
         res=requests.get(url)
+        if res.status_code!=200:
+            raise NameError("Could not connect to ror server")
         result={}
         try:
             result=res.json()
@@ -467,7 +469,9 @@ class KahiDb(KahiParser):
     def get_doilist_from_collection(self,db,collection,field):
         doilist=[]
         for reg in self.client[db][collection].find({},{field:1}):
-            doilist.append(reg[field])
+            regdb=self.db["documents"].find_one({"external_ids.id":reg[field]})
+            if not regdb:
+                doilist.append(reg[field])
         return doilist
             
     def link_authors_institutions(self,author_institution):
@@ -835,7 +839,7 @@ class KahiDb(KahiParser):
                 author["_id"]=result.inserted_id
             #removing all information but the id
             author_id=author["_id"]
-            author={"_id":author_id,"affiliations":affiliations}
+            author={"_id":author_id,"affiliations":affiliations,"corresponding":author["corresponding"]}
             authors.append(author)
 
         register["author_institutions"]=authors

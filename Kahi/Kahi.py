@@ -20,7 +20,6 @@ class Kahi(KahiDb):
         '''
         super().__init__(dbserver_url=dbserver_url,port=port,colav_db=colav_db,ror_url=ror_url,n_jobs=n_jobs,verbose=verbose)
         
-        self.articles_doi=[] #articles with dois
         self.articles=[] #articles without dois
         self.transformed=[] #articles in CoLav format
         self.loaded=[] #link to the ids of the loaded registers {document,author,institution,source}
