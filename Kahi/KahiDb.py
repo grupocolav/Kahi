@@ -255,11 +255,15 @@ class KahiDb(KahiParser):
             GRID.ac result dictionary with the number of results and the full information of them
 
         '''
+        if not token:
+            result={}
+            result["number_of_results"]=0
+            return result
         query=urllib.parse.quote(token)
         url='{}{}'.format(self.ror_url,query)
         res=requests.get(url)
         if res.status_code!=200:
-            raise NameError("Could not connect to ror server")
+            raise NameError("Server responded with status error: ",res.status_code)
         result={}
         try:
             result=res.json()
