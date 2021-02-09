@@ -473,9 +473,9 @@ class KahiDb(KahiParser):
     def get_doilist_from_collection(self,db,collection,field):
         doilist=[]
         for reg in self.client[db][collection].find({},{field:1}):
-            regdb=self.db["documents"].find_one({"external_ids.id":reg[field]})
+            regdb=self.db["documents"].find_one({"external_ids.id":reg[field].lower()})
             if not regdb:
-                doilist.append(reg[field])
+                doilist.append(reg[field].lower())
         return doilist
             
     def link_authors_institutions(self,author_institution):

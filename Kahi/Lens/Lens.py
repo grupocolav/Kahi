@@ -140,9 +140,6 @@ class Lens():
         #CITATION SECTION    
         citations=[]
         if "scholarly_citations_count" in reg.keys(): data["citations_count"]=int(reg["scholarly_citations_count"])
-        if "scholarly_citations" in reg.keys():
-            pass
-        data["citations"]=citations
 
         return data
 
