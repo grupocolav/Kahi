@@ -171,3 +171,8 @@ class Kahi(KahiDb):
         self.articles=self.get_doilist_from_collection(db,collection,field)
         result=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.process_one)(i) for i in range(len(self.articles)))
         self.status=result
+
+    def parallel_all_from_doilist(self,doilist):
+        self.articles=doilist
+        result=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.process_one)(i) for i in range(len(self.articles)))
+        self.status=result

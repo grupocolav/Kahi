@@ -145,8 +145,6 @@ class KahiDb(KahiParser):
         self.db_suffix="antioquia"
         self.collection="stage"
 
-        self.colavdb=self.client["colav_"+self.db_suffix]
-        self.griddb=self.client["grid_"+self.db_suffix]
         self.wosdb=self.client["wos_"+self.db_suffix]
         self.lensdb=self.client["lens_"+self.db_suffix]
         #self.scielodb=self.client["scielo_"+self.db_suffix]
@@ -263,7 +261,7 @@ class KahiDb(KahiParser):
         url='{}{}'.format(self.ror_url,query)
         res=requests.get(url)
         if res.status_code!=200:
-            raise NameError("Server responded with status error: ",res.status_code)
+            raise NameError("Server responded to the request {} with status error: {}".format(query,res.status_code))
         result={}
         try:
             result=res.json()
@@ -299,19 +297,20 @@ class KahiDb(KahiParser):
         if register_db:
             return None
 
+        entry={"scielo":None}
         lens_register=self.lensdb[self.collection].find_one({"external_ids.value":doi})
+        entry["lens"] = lens_register if lens_register else None
         wos_register=self.wosdb[self.collection].find_one({"doi_idx":doi})
+        entry["wos"] = wos_register if wos_register else None
         #scielo_register=self.scielodb[self.collection].find_one({"doi_idx":doi})
         scopus_register=self.scopusdb[self.collection].find_one({"doi_idx":doi})
+        entry["scopus"] = scopus_register if scopus_register else None
         scholar_register=self.scholardb[self.collection].find_one({"doi_idx":doi})
+        entry["scholar"] = scholar_register if scholar_register else None
         oadoi_register=self.oadoidb[self.collection].find_one({"doi_idx":doi})
+        entry["oadoi"] = oadoi_register if oadoi_register else None
 
-        return({"lens":lens_register,
-                "wos":wos_register,
-                "scielo":scielo_register,
-                "scopus":scopus_register,
-                "scholar":scholar_register,
-                "oadoi":oadoi_register})
+        return(entry)
     
     def find_many_doi(self,doi_list):
         '''

@@ -12,7 +12,7 @@ class Oadoi():
     def parse_document(self,reg):
         data={}
         data["updated"]=int(time())
-        data["source_checked"]=[{"source":"scholar","ts":int(time())}]
+        data["source_checked"]=[{"source":"oadoi","ts":int(time())}]
         data["publication_type"]=""
         data["titles"]=[]
         data["subtitle"]=""

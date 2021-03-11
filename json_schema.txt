@@ -86,7 +86,10 @@
     "initials":<str>,
     "aliases":<List of str>,
     "affiliations":<list of internal ids>,
-    "branches":<list of internal ids from branches collection>
+    "branches":[
+        "id":<internal_id>,
+        "type":<str>
+    ]
     "keywords":<list of str>,
     "external_ids":[
         {
@@ -146,6 +149,12 @@
             "id":<internal id>
         }
     ]
+    "keywords":[
+        {
+            "source":<str>,
+            "value":<list of str>
+        }
+    ],
     "addresses":[
         {
             "country":<str>,

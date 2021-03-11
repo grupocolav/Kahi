@@ -352,7 +352,7 @@ class KahiParser():
         if self.verbose==5: print("JOINING DOCUMENTS")
         document=self.document_empty()
 
-        if data["lens"]:
+        if data["lens"] :
             document["source_checked"].extend(data["lens"]["source_checked"])
         if data["wos"]:
             document["source_checked"].extend(data["wos"]["source_checked"])
@@ -872,6 +872,8 @@ class KahiParser():
                 if data["scholar"]:
                     entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
+                entry["updated"]=updated      
+                authors.append(entry)
             
         elif data["scopus"]:
             author_count=len(data["scopus"])
@@ -901,5 +903,7 @@ class KahiParser():
                 if data["scholar"]:
                     entry["source_checked"].append({"source":"scholar","date":int(time())})
                     entry=self.find_complement(data["scholar"],entry)
+                entry["updated"]=updated      
+                authors.append(entry)
 
         return authors
