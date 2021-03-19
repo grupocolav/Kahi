@@ -17,7 +17,6 @@ class Oadoi():
         data["titles"]=[]
         data["subtitle"]=""
         data["abstract"]=""
-        data["abstract_idx"]=""
         data["keywords"]=[]
         data["start_page"]=""
         data["end_page"]=""

@@ -31,7 +31,6 @@ class Lens():
         data["titles"]=[]
         data["subtitle"]=""
         data["abstract"]=""
-        data["abstract_idx"]=""
         data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
@@ -63,7 +62,7 @@ class Lens():
         if "title" in reg.keys():
             title=reg["title"]
             lang=classify(title)
-            data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
+            data["titles"].append({"title":title,"lang":lang[0]})
         if "abstract" in reg.keys():
             if reg["abstract"] and reg["abstract"]==reg["abstract"]:
                 data["abstract"]=reg["abstract"]
@@ -304,10 +303,8 @@ class Lens():
         source["updated"]=""
         source["source_checked"]=[]
         source["title"]=""
-        source["title_idx"]=""
         source["type"]=""
         source["publisher"]=""
-        source["publisher_idx"]=""
         source["institution"]=""
         source["institution_id"]=""
         source["country"]=""

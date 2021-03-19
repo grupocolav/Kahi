@@ -41,7 +41,6 @@ class WebOfScience():
         data["titles"]=[]
         data["subtitle"]=""
         data["abstract"]=""
-        data["abstract_idx"]=""
         data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
@@ -102,7 +101,7 @@ class WebOfScience():
             if register["TI"] and register["TI"]==register["TI"]:
                 title=register["TI"].strip()
                 lang=classify(title)
-                data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
+                data["titles"].append({"title":title,"lang":lang[0]})
         if "AB" in register.keys():
             if register["AB"] and register["AB"]==register["AB"]:
                 data["abstract"]=register["AB"].rstrip()

@@ -58,7 +58,6 @@ class KahiParser():
         document["titles"]=[]
         document["subtitle"]=""
         document["abstract"]=""
-        document["abstract_idx"]=""
         document["keywords"]=[]
         document["start_page"]=""
         document["end_page"]=""
@@ -302,8 +301,6 @@ class KahiParser():
 
         source["abbreviations"]=abbreviations
         source["serials"]=serials
-        source["title_idx"]=source["title"].lower()
-        source["publisher_idx"]=source["publisher"].lower()
 
 
         return source
@@ -427,7 +424,6 @@ class KahiParser():
             if data["lens"]["abstract"]:
                 document["abstract"]=data["lens"]["abstract"]
         
-        document["abstract_idx"]=document["abstract"].lower()
 
         #start page
         if data["scopus"]:

@@ -14,13 +14,15 @@ from Kahi.KahiDb import KahiDb
 
 
 class Kahi(KahiDb):
-    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=8,verbose=0):
+    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",db_suffix="_antioquia",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=12,verbose=0):
         '''
         Class with the attributes and methods that will put the entire ETL process together
         '''
-        super().__init__(dbserver_url=dbserver_url,port=port,colav_db=colav_db,ror_url=ror_url,n_jobs=n_jobs,verbose=verbose)
+        super().__init__(dbserver_url=dbserver_url,port=port,colav_db=colav_db,db_suffix=db_suffix,ror_url=ror_url,n_jobs=n_jobs,verbose=verbose)
         
-        self.articles=[] #articles without dois
+        self.data_articles=[]
+        self.found_ids=[]
+        self.articles=[] #articles with dois
         self.transformed=[] #articles in CoLav format
         self.loaded=[] #link to the ids of the loaded registers {document,author,institution,source}
         self.status={} #Marks the status of the process. For example: data cannot be loaded if its not linked
@@ -176,3 +178,66 @@ class Kahi(KahiDb):
         self.articles=doilist
         result=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=10)(delayed(self.process_one)(i) for i in range(len(self.articles)))
         self.status=result
+
+    def process_one_data(self,index):
+        raw=self.data_articles[index]
+        indexes,data=self.find_one_similarity(raw)
+        self.found_ids.append(indexes)
+        del(raw)
+        parsed=self.transform_one(data)
+        del(data)
+        linked=self.link_one(parsed)
+        
+        for key,value in indexes.items():
+            if value or value==0:
+                #Adding the checkpoint data to the register
+                linked["document"]["source_checked"].append({"source":key+"_"+self.db_suffix,"id":self.mongo_ids[key][value]})
+                #removing the processed information from similarity lists
+                self.mongo_ids[key].pop(value)
+                self.titles[key].pop(value)
+                self.sources[key].pop(value)
+                self.years[key].pop(value)
+                print("Now the similarity list for {} has {} elements".format(key,len(self.mongo_ids[key])))
+        del(parsed)
+        return self.insert_one(linked)
+
+    def process_all_data(self):
+        for i in range(len(self.data_articles)):
+            process_one_data(i)
+        
+    def process_data_from_db(self,db,collection="stage",doi_field="doi_idx"):
+        #get the register from the collection
+        full_data,self.data_articles=self.find_data_through_database(db,collection,doi_field)
+        #get the rest of the entitites from the similarity check not including the db
+        for index,raw in enumerate(self.data_articles):
+            indexes,data=self.find_one_similarity(raw,exclude=[db])
+            self.found_ids.append(indexes)
+            #add the register from the actual db
+            data[db]=full_data[index]     
+            #Proceed as usual
+            parsed=self.transform_one(data)
+            linked=self.link_one(parsed)
+            del(parsed)
+            for key,value in indexes.items():
+                if value or value==0:
+                    #Adding the checkpoint data to the register
+                    linked["document"]["source_checked"].append({"source":key+"_"+self.db_suffix,"id":self.mongo_ids[key][value]})
+                    #removing the processed information from similarity lists
+                    self.mongo_ids[key].pop(value)
+                    self.titles[key].pop(value)
+                    self.sources[key].pop(value)
+                    self.years[key].pop(value)
+                    print("Now the similarity list for {} has {} elements".format(key,len(self.mongo_ids[key])))
+            self.insert_one(linked)
+
+
+
+    def parallel_all_from_datalist(self,datalist,batch_size=1):
+        self.data_articles=datalist
+        for i in range(0,len(self.data_articles),batch_size):
+            if i+batch_size<=len(self.data_articles):
+                result=Parallel(n_jobs=batch_size,backend="multiprocessing",verbose=10)(delayed(self.process_one_data)(j) for j in range(i,i+batch_size))
+            else:
+                result=Parallel(n_jobs=batch_size,backend="multiprocessing",verbose=10)(delayed(self.process_one_data)(j) for j in range(i,len(self.data_articles)))
+            #erase the items in raw list of titles, sources and years according to the found ids
+

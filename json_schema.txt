@@ -14,12 +14,10 @@
     "publication_type":<str>,
     "titles":[
         "title":<str>,
-        "lang":<str>,
-        "title_idx":<str>
+        "lang":<str>
     ],
     "subtitle":<str>,
     "abstract":<str>,
-    "abstract_idx":<str>,
     "keywords":<list of str>,
     "start_page":<int>,
     "end_page":<int>,
@@ -185,10 +183,8 @@
         "date":<int>
     }]
     "title":<str>,
-    "title_idx":<str>,
     "type":<str>,
     "publisher":<str>,
-    "publisher_idx":<str>,
     "institution":<str>,
     "institution_id":<internal id>,
     "country":<str>,

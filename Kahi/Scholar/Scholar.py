@@ -18,7 +18,6 @@ class Scholar():
         data["titles"]=[]
         data["subtitle"]=""
         data["abstract"]=""
-        data["abstract_idx"]=""
         data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
@@ -132,10 +131,8 @@ class Scholar():
         source["updated"]=int(time())
         source["source_checked"]=[{"source":"scholar","ts":int(time())}]
         source["title"]=""
-        source["title_idx"]=""
         source["type"]=""
         source["publisher"]=""
-        source["publisher_idx"]=""
         source["institution"]=""
         source["institution_id"]=""
         source["country"]=""
@@ -157,10 +154,8 @@ class Scholar():
         
         if "journal" in reg.keys():
             source["title"]=reg["journal"]
-        source["title_idx"]=source["title"].lower()
         if "publisher" in reg.keys():
             source["publisher"]=reg["publisher"]
-        source["publisher_idx"]=source["publisher"].lower()
 
         return source
     

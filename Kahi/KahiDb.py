@@ -9,9 +9,9 @@ import urllib.parse
 import requests
 from pandas import read_csv
 from joblib import Parallel, delayed
+from bson.objectid import ObjectId
 
 from Kahi.KahiParser import KahiParser
-
 
 # START HELPER FUNCTION SECCTION
 
@@ -103,8 +103,13 @@ def colav_similarity(title1,title2,journal1,journal2,year1,year2,ratio_thold=90,
     
 #END OF HELPER FUNCTIONS SECTION
 
+def evaluate_similarity(data,title,source,year,ratio=90,partial=95,low=80):
+        pred = colav_similarity(data["title"],title,data["source"],source,data["year"],year,ratio,partial,low,use_regex=True)
+        return pred
+        #return True
+
 class KahiDb(KahiParser):
-    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=8,verbose=5):
+    def __init__(self,dbserver_url="localhost",port=27017,colav_db="colav",db_suffix="_antioquia",ror_url='https://api.ror.org/organizations?affiliation=',n_jobs=24,verbose=5):
         """
         Base class for Kahi. Includes methods to retrieve, compare, insert and update
         authors, institutions, documents and sources
@@ -142,15 +147,15 @@ class KahiDb(KahiParser):
 
         self.n_jobs=n_jobs
         
-        self.db_suffix="antioquia"
+        self.db_suffix=db_suffix
         self.collection="stage"
 
-        self.wosdb=self.client["wos_"+self.db_suffix]
-        self.lensdb=self.client["lens_"+self.db_suffix]
+        self.wosdb=self.client["wos"+self.db_suffix]
+        self.lensdb=self.client["lens"+self.db_suffix]
         #self.scielodb=self.client["scielo_"+self.db_suffix]
-        self.scopusdb=self.client["scopus_"+self.db_suffix]
-        self.scholardb=self.client["scholar_"+self.db_suffix]
-        self.oadoidb=self.client["oadoi_"+self.db_suffix]
+        self.scopusdb=self.client["scopus"+self.db_suffix]
+        self.scholardb=self.client["scholar"+self.db_suffix]
+        self.oadoidb=self.client["oadoi"+self.db_suffix]
         self.doajdb=self.client["doaj"]
 
         #We have to load in memory all the information needed for the similarity checks
@@ -172,6 +177,8 @@ class KahiDb(KahiParser):
                     break
             if doi:
                 continue
+            if self.db["documents"].find_one({"source_checked.id":ObjectId(reg["_id"])}):
+                continue
             self.titles["lens"].append(reg["title"])
             journal=""
             if "source" in reg.keys():
@@ -180,9 +187,12 @@ class KahiDb(KahiParser):
             self.sources["lens"].append(str(journal))
             self.years["lens"].append(reg["year_published"])
             self.mongo_ids["lens"].append(reg["_id"])
+        print("Loaded {} registers from {} database".format(len(self.mongo_ids["lens"]),"lens"+self.db_suffix))
         
         for reg in self.wosdb[self.collection].find({"doi_idx":""}):
             if reg["doi_idx"]:
+                continue
+            if self.db["documents"].find_one({"source_checked.id":ObjectId(reg["_id"])}):
                 continue
             self.titles["wos"].append(reg["TI"])
             self.sources["wos"].append(str(reg["SO"]))
@@ -197,19 +207,25 @@ class KahiDb(KahiParser):
                         print(e)
             self.years["wos"].append(year)
             self.mongo_ids["wos"].append(reg["_id"])
+        print("Loaded {} registers from {} database".format(len(self.mongo_ids["wos"]),"wos"+self.db_suffix))
 
         for reg in self.scopusdb[self.collection].find({"doi_idx":""}):
             if reg["doi_idx"]:
+                continue
+            if self.db["documents"].find_one({"source_checked.id":ObjectId(reg["_id"])}):
                 continue
             self.titles["scopus"].append(reg["Title"])
             self.sources["scopus"].append(str(reg["Source title"]))
             self.years["scopus"].append(reg["Year"])
             self.mongo_ids["scopus"].append(reg["_id"])
+        print("Loaded {} registers from {} database".format(len(self.mongo_ids["scopus"]),"scopus"+self.db_suffix))
 
         for reg in self.scholardb[self.collection].find():
             if "doi_idx" in reg.keys():
                 if reg["doi_idx"]:
                     continue
+            if self.db["documents"].find_one({"source_checked.id":ObjectId(reg["_id"])}):
+                continue
             self.titles["scholar"].append(reg["title"])
             self.sources["scholar"].append(str(reg["journal"]))
             year=""
@@ -223,6 +239,7 @@ class KahiDb(KahiParser):
                         print(e)
             self.years["scholar"].append(year)
             self.mongo_ids["scholar"].append(reg["_id"])
+        print("Loaded {} registers from {} database".format(len(self.mongo_ids["scholar"]),"scholar"+self.db_suffix))
 
         
 
@@ -363,19 +380,18 @@ class KahiDb(KahiParser):
         
         return register_list
         
-    def evaluate_similarity(self,data,db,i,ratio=90,partial=95,low=80):
-        pred = colav_similarity(data["title"],self.titles[db][i],data["source"],self.sources[db][i],data["year"],self.years[db][i],ratio,partial,low,use_regex=True)
-        return pred
+    
     
     def parallel_similarity(self,data,db):
-        results=Parallel(n_jobs=self.n_jobs,backend="threading",verbose=0)(delayed(self.evaluate_similarity)(data,db,i) for i in range(len(self.titles[db])))
+
+        results=Parallel(n_jobs=self.n_jobs,backend="multiprocessing",verbose=0)(delayed(evaluate_similarity)(data,self.titles[db][i],self.sources[db][i],self.years[db][i]) for i in range(len(self.titles[db])))
         try:
             idx=results.index(True)
             return idx
         except:
             return None
 
-    def find_one_similarity(self,data):
+    def find_one_similarity(self,data,exclude=[]):
         '''
         Uses a similarity algorithm to find the corresponding entity in each raw database
 
@@ -391,30 +407,47 @@ class KahiDb(KahiParser):
         If the register was not found, the entry is None.
 
         '''
-        registers=[]
+        entry={
+            "scielo":None,
+            "lens":None,
+            "scopus":None,
+            "wos":None,
+            "oadoi":None,
+            "scholar":None
+        }
+        indexes={
+            "scielo":None,
+            "lens":None,
+            "scopus":None,
+            "wos":None,
+            "oadoi":None,
+            "scholar":None
+        }
         for db in ["lens","wos","scielo","scopus","scholar"]:#,"oadoi"]:
+            if db in exclude:
+                continue
             idx=self.parallel_similarity(data,db)
             if idx or idx==0:
                 mongo_id=self.mongo_ids[db][idx]
                 if db=="lens":
                     reg=self.lensdb[self.collection].find_one({"_id":mongo_id})
-                    registers.append(reg)
+                    entry["lens"] = reg if reg else None
+                    indexes["lens"]=idx
                 if db=="wos":
                     reg=self.wosdb[self.collection].find_one({"_id":mongo_id})
-                    registers.append(reg)
-                if db=="scielo":
-                    reg=self.scielodb[self.collection].find_one({"_id":mongo_id})
-                    registers.append(reg)
+                    entry["wos"] = reg if reg else None
+                    indexes["wos"]=idx
                 if db=="scopus":
                     reg=self.scopusdb[self.collection].find_one({"_id":mongo_id})
-                    registers.append(reg)
+                    entry["scopus"] = reg if reg else None
+                    indexes["scopus"]=idx
                 if db=="scholar":
                     reg=self.scholardb[self.collection].find_one({"_id":mongo_id})
-                    registers.append(reg)
+                    entry["scholar"] = reg if reg else None
+                    indexes["scholar"]=idx
 
-            else:
-                registers.append(None)
-        return tuple(registers)
+           
+        return indexes,entry
 
     def find_many_similarity(self,data_list):
         '''
@@ -436,6 +469,29 @@ class KahiDb(KahiParser):
         for data in data_list:
             register_list.append(find_one_similarity(data))
         return register_list
+    
+    def find_data_through_database(self,db,collection="stage",doi_field="doi_idx"):
+        similarity_data=[]
+        full_data=[]
+        for reg in self.client[db][collection].find():
+            if doi_field in reg.keys():
+                if reg[doi_field]:
+                    continue
+            full_data.append(reg)
+            #has to be different for each db
+            if "scholar" in db:
+                similarity_data.append({
+                    "title":reg["title"],
+                    "source":reg["journal"],
+                    "year":reg["year"]
+                })
+            elif "scopus" in db:
+                pass
+            elif "wos" in db:
+                pass
+            elif "lens" in db:
+                pass
+        return full_data,similarity_data    
 
     def find_from_collection(self,db,collection,field):
         '''
@@ -737,7 +793,6 @@ class KahiDb(KahiParser):
                 
             if not register["publisher"] and source["publisher"]:
                 mod["publisher"]=source["publisher"]
-                mod["publisher_idx"]=source["publisher_idx"]
             if not register["country"] and source["country"]:
                 mod["country"]=source["country"]
             #serials

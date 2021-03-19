@@ -35,7 +35,6 @@ class Scopus():
         data["titles"]=[]
         data["subtitle"]=""
         data["abstract"]=""
-        data["abstract_idx"]=""
         data["bibtex"]=""
         data["keywords"]=[]
         data["start_page"]=""
@@ -64,7 +63,7 @@ class Scopus():
         if "Title" in reg.keys():
             title=reg["Title"]
             lang=classify(title)
-            data["titles"].append({"title":title,"lang":lang[0],"title_idx":title.lower()})
+            data["titles"].append({"title":title,"lang":lang[0]})
         if "Year" in reg.keys(): data["year_published"]=reg["Year"]
         if "Volume" in reg.keys(): 
             if reg["Volume"] and reg["Volume"]==reg["Volume"]:

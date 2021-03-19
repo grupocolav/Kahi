@@ -16,10 +16,8 @@ class Doaj():
         source["updated"]=int(time())
         source["source_checked"]=[{"source":"doaj","ts":int(time())}]
         source["title"]=""
-        source["title_idx"]=""
         source["type"]=""
         source["publisher"]=""
-        source["publisher_idx"]=""
         source["institution"]=""
         source["institution_id"]=""
         source["external_urls"]=[]
@@ -59,7 +57,6 @@ class Doaj():
             source["languages"]=reg["language"]
         if "title" in reg.keys():
             source["title"]=reg["title"]
-        source["title_idx"]=source["title"].lower()
         if "plagiarism_detection" in reg.keys():
             source["plagiarism_detection"]=reg["plagiarism_detection"]["detection"]
         if "institution" in reg.keys(): #The institution id is linked in the kahi class
@@ -77,7 +74,6 @@ class Doaj():
             source["author_copyright"]=reg["author_copyright"]["copyright"]
         if "publisher" in reg.keys():
             source["publisher"]=reg["publisher"]
-        source["publisher_idx"]=source["publisher"].lower()
         if "publication_time" in reg.keys():
             source["publication_time"]=reg["publication_time"]
         if "license" in reg.keys():
