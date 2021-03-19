@@ -191,7 +191,7 @@ class Kahi(KahiDb):
         for key,value in indexes.items():
             if value or value==0:
                 #Adding the checkpoint data to the register
-                linked["document"]["source_checked"].append({"source":key+"_"+self.db_suffix,"id":self.mongo_ids[key][value]})
+                linked["document"]["source_checked"].append({"source":key+self.db_suffix,"id":self.mongo_ids[key][value]})
                 #removing the processed information from similarity lists
                 self.mongo_ids[key].pop(value)
                 self.titles[key].pop(value)
@@ -221,7 +221,7 @@ class Kahi(KahiDb):
             for key,value in indexes.items():
                 if value or value==0:
                     #Adding the checkpoint data to the register
-                    linked["document"]["source_checked"].append({"source":key+"_"+self.db_suffix,"id":self.mongo_ids[key][value]})
+                    linked["document"]["source_checked"].append({"source":key+self.db_suffix,"id":self.mongo_ids[key][value]})
                     #removing the processed information from similarity lists
                     self.mongo_ids[key].pop(value)
                     self.titles[key].pop(value)

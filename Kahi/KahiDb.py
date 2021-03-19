@@ -567,7 +567,7 @@ class KahiDb(KahiParser):
                     break
         if author_found:
             if self.verbose==5: print("Found ",author["full_name"])
-            author_institution["_id"]=author["_id"]
+            author_institution["id"]=author["_id"]
             #author modifications section
             mod={}
             if not author_institution["first_names"] and author["first_names"]:
@@ -646,7 +646,7 @@ class KahiDb(KahiParser):
                                 break
             if aff_found:
                 if self.verbose==5: print("Affiliation found in institutions collection")
-                affiliation["_id"]=affdb["_id"]
+                affiliation["id"]=affdb["_id"]
                 #affiliations modification section
                 mod={}
                 #if not affiliation[""] and affdb[""]:
@@ -756,7 +756,7 @@ class KahiDb(KahiParser):
             if register:
                 break
         if register:
-            source["_id"]=register["_id"]
+            source["id"]=register["_id"]
             mod={}
             if not register["type"] and source["type"]:
                 mod["type"]=source["type"]
@@ -863,41 +863,41 @@ class KahiDb(KahiParser):
     
     def insert_one(self,register):
         #Source section
-        if "_id" in register["source"].keys():
+        if "id" in register["source"].keys():
             if "mod" in register["source"].keys():
-                response=self.db["sources"].update_one({"_id":register["source"]["_id"]},{"$set":register["source"]["mod"]})
+                response=self.db["sources"].update_one({"_id":register["source"]["id"]},{"$set":register["source"]["mod"]})
         else:
             result=self.db["sources"].insert_one(register["source"])
-            register["source"]["_id"]=result.inserted_id
+            register["source"]["id"]=result.inserted_id
         #removing all information but the id
-        source_id=register["source"]["_id"]
-        register["source"]={"_id":source_id}
+        source_id=register["source"]["id"]
+        register["source"]={"id":source_id}
 
         #author and affiliations section
         authors=[]
         for author in register["author_institutions"]:
             affiliations=[]
             for aff in author["affiliations"]:
-                if "_id" in aff.keys(): #modify whats is needed
+                if "id" in aff.keys(): #modify whats is needed
                     if "mod" in aff.keys():
-                        result=self.db["institutions"].update_one({"_id":aff["_id"]},{"$set":aff["mod"]})
+                        result=self.db["institutions"].update_one({"_id":aff["id"]},{"$set":aff["mod"]})
                 else:#insert the affiliation and recover the id
                     result=self.db["institutions"].insert_one(aff)
-                    aff["_id"]=result.inserted_id
+                    aff["id"]=result.inserted_id
                 #removing all information but the id
-                mongo_id=aff["_id"]
-                aff={"_id":mongo_id}
+                mongo_id=aff["id"]
+                aff={"id":mongo_id}
                 affiliations.append(aff)
-            if "_id" in author.keys(): #modify what's needed
+            if "id" in author.keys(): #modify what's needed
                 if "mod" in author.keys():
-                    result=self.db["authors"].update_one({"_id":author["_id"]},{"$set":author["mod"]})
+                    result=self.db["authors"].update_one({"_id":author["id"]},{"$set":author["mod"]})
             else: #insert the author and recover the id
                 del(author["affiliations"])
                 result=self.db["authors"].insert_one(author)
-                author["_id"]=result.inserted_id
+                author["id"]=result.inserted_id
             #removing all information but the id
-            author_id=author["_id"]
-            author={"_id":author_id,"affiliations":affiliations,"corresponding":author["corresponding"]}
+            author_id=author["id"]
+            author={"id":author_id,"affiliations":affiliations,"corresponding":author["corresponding"]}
             authors.append(author)
 
         register["author_institutions"]=authors
