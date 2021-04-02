@@ -1,6 +1,7 @@
-pymongo==3.10.1
+pymongo
 iso3166==1.0.1
 iso-639==0.4.5
-langdetect==1.14.0
-currencyconverter==0.14.2
-joblib==1.0.0
+langdetect
+currencyconverter
+joblib
+elasticsearch
