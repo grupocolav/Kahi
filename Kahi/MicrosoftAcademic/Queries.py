@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import sys
 
 class Queries:
-    def __init__(self,db_name="MA",db_ip="127.0.0.1",db_port=27017,db_es_index="mag",db_es_ip="127.0.0.1",db_es_port=9200,db_es_timeout=60):
+    def __init__(self,db_name="MAG",db_ip="127.0.0.1",db_port=27017,db_es_index="mag",db_es_ip="127.0.0.1",db_es_port=9200,db_es_timeout=60):
         """
         Class to get information of Microsoft Academic Graph from MongoDB and Elastic Search.
         Allows to get paper by Title on ElasticSearch and Paper by Doi and ID using MongoDB.
@@ -11,6 +11,7 @@ class Queries:
         The dataset must be previously loaded with Inti on the MongoDB and ElasticSearch databases.
         """
         self.client = MongoClient(db_ip,db_port)
+        self.db_name = db_name
         self.db = self.client[db_name]
         self.es = Elasticsearch(HOST="http://{}".format(db_es_ip), PORT=db_es_port,timeout=db_es_timeout)
         self.db_es_index = db_es_index
@@ -86,7 +87,12 @@ class Queries:
         pid=int(pid)
         db = self.db
         paper = {}
-        paper['Paper'] = db['Papers'].find_one({'PaperId': pid},{'_id':0})
+        _paper = db['Papers'].find_one({'PaperId': pid},{'_id':0})
+        if _paper is None:
+            print("=== Error: Paper not found, on db = {} with pid = {}".format(self.db_name,pid))
+            return paper
+        paper['Paper'] = _paper
+         
     
         ###MAG
         paper['PaperExtendedAttributes'] = list(db['PaperExtendedAttributes'].find({'PaperId': pid},{'_id':0}))
