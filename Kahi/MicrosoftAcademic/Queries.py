@@ -90,7 +90,7 @@ class Queries:
         _paper = db['Papers'].find_one({'PaperId': pid},{'_id':0})
         if _paper is None:
             print("=== Error: Paper not found, on db = {} with pid = {}".format(self.db_name,pid))
-            return paper
+            return None
         paper['Paper'] = _paper
          
     
